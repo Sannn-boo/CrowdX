@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrowdX Dashboard - The Mall Theme</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; overflow-x: hidden; }
+        .card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.5rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.05); border-color: #cbd5e1; }
+        
+        #toast { transition: opacity 0.3s ease, transform 0.3s ease; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* ซ่อนส่วนที่ไม่จำเป็นตอนปริ้นต์แบบปกติ */
+        @media print {
+            #main-ui { display: none !important; }
+            #report-template { display: block !important; }
+        }
+    </style>
+</head>
+<body class="p-6 min-h-screen relative">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-white border border-blue-100 text-slate-700 px-4 py-3 rounded-lg shadow-xl opacity-0 pointer-events-none transform translate-y-4 z-50 flex items-center">
+        <span id="toast-message" class="font-medium text-sm">System Notification</span>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MAIN UI (DASHBOARD) -->
+    <!-- ========================================== -->
+    <div id="main-ui">
+        <!-- Modal: System Status -->
+        <div id="statusModal" class="fixed inset-0 bg-slate-900/40 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+            <div class="bg-white border border-blue-100 rounded-xl p-6 w-[600px] shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-slate-800">Vision AI Edge Processing</h2>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-blue-600 text-xl transition-colors">&times;</button>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Strictly for IT setup. Raw video is processed on the edge server and instantly anonymized.</p>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-slate-50 border border-slate-200 h-32 rounded-lg flex flex-col items-center justify-center relative shadow-inner">
+                        <span class="absolute top-2 right-2 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>
+                        <span class="text-slate-600 text-sm mb-1 font-medium">Cam 1: Expo Hall</span>
+                        <span class="text-emerald-600 text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100">Status: Counting</span>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 h-32 rounded-lg flex flex-col items-center justify-center relative shadow-inner">
+                        <span class="absolute top-2 right-2 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>
+                        <span class="text-slate-600 text-sm mb-1 font-medium">Cam 2: MRT Link</span>
+                        <span class="text-emerald-600 text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100">Status: Mode Detect</span>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button onclick="closeModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">Close Monitor</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navbar -->
+        <nav class="flex justify-between items-center mb-8">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="showToast('Data refreshed successfully.')">
+                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center font-bold text-white shadow-sm">CX</div>
+                <h1 class="text-xl font-bold text-slate-800">CrowdX <span class="text-xs text-slate-500 block font-normal">AI Smart Event & Carbon Tracker</span></h1>
+            </div>
+            
+            <!-- Navigation -->
+            <div class="flex space-x-2 text-sm font-medium text-slate-500 bg-white p-1 rounded-full border border-blue-100 shadow-sm" id="nav-menu">
+                <button onclick="switchTab('overview', this)" class="nav-btn bg-blue-50 text-blue-700 font-bold px-4 py-2 rounded-full transition-colors">Overview</button>
+                <button onclick="switchTab('business', this)" class="nav-btn hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-full transition-colors">Business</button>
+                <button onclick="switchTab('carbon', this)" class="nav-btn hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-full transition-colors">Carbon</button>
+            </div>
+
+            <!-- System Controls -->
+            <div class="flex space-x-4">
+                <button onclick="exportFormalReport()" class="px-4 py-2 rounded-full border border-slate-200 bg-white text-slate-600 hover:text-blue-700 hover:bg-blue-50 text-sm font-medium transition-colors shadow-sm">
+                    Export Report
+                </button>
+                <button onclick="openModal()" class="px-4 py-2 rounded-full border border-slate-200 bg-white text-sm flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm text-slate-600 font-medium">
+                    System Status
+                </button>
+                <button class="px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium" id="liveStatusBtn">
+                    <div id="statusDot" class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> 
+                    <span id="statusText">Connecting...</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Header -->
+        <header class="mb-8">
+            <p class="text-xs font-bold text-blue-600 tracking-wider mb-2">EVENT INTELLIGENCE</p>
+            <h2 class="text-3xl font-bold mb-2 text-slate-900" id="page-title">MUICT x The Mall Green Expo 2026</h2>
+            <p class="text-slate-500 text-sm" id="page-subtitle">Dual-engine reporting: commercial performance and verified carbon impact, updated in real-time.</p>
+        </header>
+
+        <!-- Top KPI -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="card relative overflow-hidden">
+                <h3 class="text-xs text-slate-500 font-bold tracking-wider mb-2">TOTAL VERIFIED VISITORS</h3>
+                <div class="text-4xl font-bold mb-2 text-slate-800" id="visitorCount">8,450</div>
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md border border-emerald-100 font-medium">+12% trend</span>
+                    <span class="text-slate-400">vs. previous expo day</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- OVERVIEW -->
+        <!-- ========================================== -->
+        <div id="page-overview" class="page-content block fade-in">
+            <div class="grid grid-cols-2 gap-6 mb-6">
+                <!-- Business Engine -->
+                <div class="card flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-blue-700">Business Engine</h3>
+                            <span class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">Commercial Data</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <p class="text-xs font-bold text-slate-400 mb-1">NET VALUE</p>
+                                <p class="text-2xl font-bold text-blue-600">45.50 <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-400 mb-1">COST</p>
+                                <p class="text-2xl font-bold text-slate-700">17.75 <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <canvas id="businessChart" height="150"></canvas>
+                    </div>
+                </div>
+
+                <!-- Carbon Engine -->
+                <div class="card flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-emerald-700">Carbon Engine</h3>
+                            <span class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">ESG Data</span>
+                        </div>
+                        <div class="mb-6">
+                            <p class="text-xs font-bold text-slate-400 mb-1">CARBON PER VISITOR</p>
+                            <div class="flex items-center gap-3">
+                                <p class="text-3xl font-bold text-emerald-600"><span id="carbonValue">0.30</span> <span class="text-lg font-normal text-slate-500">kgCO2e</span></p>
+                                <span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full border border-emerald-200 font-medium">15% below standard</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-center relative">
+                            <div class="w-48 h-48"><canvas id="carbonChart"></canvas></div>
+                            <div class="absolute right-0 flex flex-col gap-3 text-sm text-slate-600 font-medium">
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> MRT/BTS</div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-400"></span> Bus</div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-400"></span> Car</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spillover -->
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="font-bold mb-1 text-slate-800">Spillover Lift Analysis</h3>
+                        <p class="text-xs text-slate-500">Incremental traffic pushed from the expo hall into adjacent mall zones</p>
+                    </div>
+                    <span class="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-bold shadow-sm">Net mall lift +10.4%</span>
+                </div>
+                <div class="grid grid-cols-5 gap-4 mt-6 text-center">
+                    <div class="border-t-[3px] border-emerald-500 pt-3"><p class="text-xs text-slate-500 mb-1">Food Court</p><p class="text-2xl font-bold text-emerald-600">+21.7%</p></div>
+                    <div class="border-t-[3px] border-blue-400 pt-3"><p class="text-xs text-slate-500 mb-1">Fashion Zone</p><p class="text-2xl font-bold text-blue-600">+5.2%</p></div>
+                    <div class="border-t-[3px] border-blue-500 pt-3"><p class="text-xs text-slate-500 mb-1">Electronics</p><p class="text-2xl font-bold text-blue-600">+9.4%</p></div>
+                    <div class="border-t-[3px] border-slate-300 pt-3"><p class="text-xs text-slate-500 mb-1">Cinema</p><p class="text-2xl font-bold text-slate-500">+3.1%</p></div>
+                    <div class="border-t-[3px] border-emerald-400 pt-3"><p class="text-xs text-slate-500 mb-1">Supermarket</p><p class="text-2xl font-bold text-emerald-500">+12.8%</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- BUSINESS DETAILED -->
+        <!-- ========================================== -->
+        <div id="page-business" class="page-content hidden fade-in">
+            <div class="card mb-6">
+                <h3 class="font-bold text-blue-700 mb-4 text-xl">Detailed Commercial Performance</h3>
+                <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg text-sm text-slate-700 mb-6 flex justify-between items-center">
+                    <span><span class="text-blue-700 font-bold">Live Insight:</span> We need 1,550 more visitors to reach the break-even target.</span>
+                    <span class="font-bold text-slate-900">Estimated time: 3 hours</span>
+                </div>
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="text-xs text-slate-400 bg-slate-50 border-b border-slate-200">
+                        <tr><th class="p-3">Cost Component</th><th class="p-3">Budget Allocation</th><th class="p-3">Cost per Visitor (Current)</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-slate-100"><td class="p-3">Marketing & Ads</td><td class="p-3 font-medium text-slate-700">50,000 THB</td><td class="p-3">5.91 THB</td></tr>
+                        <tr class="border-b border-slate-100"><td class="p-3">Venue Setup & Operations</td><td class="p-3 font-medium text-slate-700">75,000 THB</td><td class="p-3">8.87 THB</td></tr>
+                        <tr><td class="p-3">Miscellaneous</td><td class="p-3 font-medium text-slate-700">25,000 THB</td><td class="p-3">2.95 THB</td></tr>
+                    </tbody>
+                    <tfoot class="bg-slate-50 font-bold text-blue-700 border-t border-slate-200">
+                        <tr><td class="p-3">Total Estimated Cost</td><td class="p-3">150,000 THB</td><td class="p-3">17.75 THB / pax</td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- CARBON DETAILED -->
+        <!-- ========================================== -->
+        <div id="page-carbon" class="page-content hidden fade-in">
+            <div class="grid grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="font-bold text-emerald-700 mb-4 text-xl">GHG Emissions Breakdown</h3>
+                    <p class="text-sm text-slate-500 mb-6">Following TGO & GHG Protocol Standards</p>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 border border-slate-100 rounded-lg bg-slate-50">
+                            <div><p class="font-bold text-slate-700">Scope 2: Electricity</p><p class="text-xs text-slate-400">Area-based MVP estimation</p></div>
+                            <p class="font-bold text-emerald-600">1,662 kgCO2e</p>
+                        </div>
+                        <div class="flex justify-between items-center p-3 border border-slate-100 rounded-lg bg-slate-50">
+                            <div><p class="font-bold text-slate-700">Scope 3: Waste (Landfill)</p><p class="text-xs text-slate-400">Average waste generation</p></div>
+                            <p class="font-bold text-emerald-600">348 kgCO2e</p>
+                        </div>
+                        <div class="flex justify-between items-center p-3 border border-emerald-100 rounded-lg bg-emerald-50">
+                            <div><p class="font-bold text-emerald-700">Scope 3: Verified Travel</p><p class="text-xs text-emerald-500">Live AI Vision Detection</p></div>
+                            <p class="font-bold text-emerald-600">525 kgCO2e</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card flex flex-col justify-center items-center text-center bg-gradient-to-b from-white to-emerald-50/30">
+                    <h3 class="text-2xl font-bold text-emerald-700 mb-2">Green Event Eligible</h3>
+                    <p class="text-slate-500 text-sm px-6">With a current carbon footprint 15% below standard, this event is on track to receive The Mall Group's Green Event Certification.</p>
+                </div>
+            </div>
+        </div>
+    </div> <!-- End of MAIN UI -->
+
+    <!-- ========================================== -->
+    <!-- HIDDEN REPORT TEMPLATE (For PDF Export) -->
+    <!-- ========================================== -->
+    <div id="report-template" class="hidden bg-white p-10 max-w-4xl mx-auto text-slate-800">
+        <!-- Report Header -->
+        <div class="border-b-2 border-blue-800 pb-6 mb-8 flex justify-between items-end">
+            <div>
+                <p class="text-sm font-bold text-slate-500 tracking-widest uppercase mb-1">Executive Summary Report</p>
+                <h1 class="text-3xl font-extrabold text-blue-900">MUICT x The Mall Green Expo 2026</h1>
+                <p class="text-slate-600 mt-2">Post-Event Analytics and ESG Performance Document</p>
+            </div>
+            <div class="text-right">
+                <div class="w-12 h-12 bg-blue-800 rounded flex items-center justify-center font-bold text-white mb-2 ml-auto">CX</div>
+                <p class="text-xs text-slate-500 font-medium">Generated via CrowdX System</p>
+                <p class="text-xs text-slate-500" id="rep-time">DD/MM/YYYY HH:MM</p>
+            </div>
+        </div>
+
+        <!-- Section 1: Executive Summary -->
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-blue-800 mb-3 border-l-4 border-blue-600 pl-3">1. Executive Overview</h2>
+            <p class="text-sm text-slate-700 leading-relaxed">
+                This report provides a verified analysis of the event's overall performance. Data has been acquired utilizing CrowdX Edge AI integration, ensuring precise visitor counting while maintaining strict compliance with the Personal Data Protection Act (PDPA). The metrics below encompass both commercial viability and environmental impact.
+            </p>
+        </div>
+
+        <!-- Section 2: Core Metrics & Business -->
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-blue-800 mb-3 border-l-4 border-blue-600 pl-3">2. Commercial Performance Metrics</h2>
+            <div class="grid grid-cols-3 gap-4 mb-4">
+                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Total Verified Visitors</p>
+                    <p class="text-2xl font-bold text-blue-900" id="rep-visitors">0</p>
+                </div>
+                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Net Value per Pax</p>
+                    <p class="text-2xl font-bold text-blue-900">45.50 THB</p>
+                </div>
+                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Estimated Cost per Pax</p>
+                    <p class="text-2xl font-bold text-slate-700">17.75 THB</p>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 italic">* Note: Baseline cost calculations include marketing, venue setup, and operational operations.</p>
+        </div>
+
+        <!-- Section 3: ESG Impact -->
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-blue-800 mb-3 border-l-4 border-emerald-500 pl-3">3. Environmental, Social, and Governance (ESG) Impact</h2>
+            <p class="text-sm text-slate-700 leading-relaxed mb-4">
+                Carbon emission computations are aligned with the Thailand Greenhouse Gas Management Organization (TGO) standards. Transportation modes are classified via visual detection algorithms.
+            </p>
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <table class="w-full text-sm text-left border-collapse border border-slate-300">
+                        <thead class="bg-slate-100">
+                            <tr>
+                                <th class="border border-slate-300 p-2 text-slate-700">Metric Description</th>
+                                <th class="border border-slate-300 p-2 text-slate-700">Current Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="border border-slate-300 p-2">Average Carbon per Visitor</td>
+                                <td class="border border-slate-300 p-2 font-bold text-emerald-700"><span id="rep-carbon">0.00</span> kgCO2e</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-slate-300 p-2">Scope 2: Electricity Estimation</td>
+                                <td class="border border-slate-300 p-2">1,662 kgCO2e</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-slate-300 p-2">Scope 3: Verified Travel</td>
+                                <td class="border border-slate-300 p-2">525 kgCO2e</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 p-4 rounded flex flex-col justify-center">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-2">Visitor Transportation Breakdown</p>
+                    <div class="space-y-2 text-sm text-slate-700 font-medium">
+                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Mass Transit (MRT/BTS):</span> <span id="rep-mrt">0%</span></div>
+                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Public Bus:</span> <span id="rep-bus">0%</span></div>
+                        <div class="flex justify-between"><span>Personal Vehicle:</span> <span id="rep-car">0%</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded text-sm text-emerald-800 font-medium">
+                Status: Eligible for The Mall Group Green Event Certification (Currently operating 15% below standard emission baselines).
+            </div>
+        </div>
+
+        <!-- Section 4: Compliance -->
+        <div class="mt-12 pt-6 border-t border-slate-200">
+            <h2 class="text-sm font-bold text-slate-800 mb-2">System Integrity and Compliance Statement</h2>
+            <p class="text-xs text-slate-500 text-justify">
+                This report is automatically generated by the CrowdX Analytics Engine. All physical visitor data has been processed exclusively on local edge servers without the retention of Personally Identifiable Information (PII) or facial records. The implementation strictly adheres to the Personal Data Protection Act (PDPA) regulations mandated in the Kingdom of Thailand.
+            </p>
+        </div>
+    </div> <!-- End of REPORT TEMPLATE -->
+
+    <!-- Scripts -->
+    <script>
+        function switchTab(targetPageId, btnElement) {
+            const navBtns = document.querySelectorAll('.nav-btn');
+            navBtns.forEach(b => {
+                b.classList.remove('bg-blue-50', 'text-blue-700', 'font-bold');
+                b.classList.add('hover:text-blue-700', 'hover:bg-blue-50');
+            });
+            btnElement.classList.remove('hover:text-blue-700', 'hover:bg-blue-50');
+            btnElement.classList.add('bg-blue-50', 'text-blue-700', 'font-bold');
+
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(p => {
+                p.classList.remove('block');
+                p.classList.add('hidden');
+            });
+
+            const targetPage = document.getElementById('page-' + targetPageId);
+            targetPage.classList.remove('hidden');
+            targetPage.classList.add('block');
+        }
+
+        // Exportformal report 
+        function exportFormalReport() {
+            showToast('Preparing Executive Summary Report...');
+            
+            // Report Real-time
+            document.getElementById('rep-visitors').innerText = document.getElementById('visitorCount').innerText;
+            document.getElementById('rep-carbon').innerText = document.getElementById('carbonValue').innerText;
+            
+            const transportData = carbonChart.data.datasets[0].data;
+            document.getElementById('rep-mrt').innerText = transportData[0] + '%';
+            document.getElementById('rep-bus').innerText = transportData[1] + '%';
+            document.getElementById('rep-car').innerText = transportData[2] + '%';
+
+            // Add the real-time timestamp to the report
+            const now = new Date();
+            document.getElementById('rep-time').innerText = now.toLocaleString('en-GB');
+
+            // 2. สลับซ่อนหน้าเว็บหลัก และเปิดหน้าเทมเพลตรายงาน
+            const mainUi = document.getElementById('main-ui');
+            const reportTemplate = document.getElementById('report-template');
+            
+            mainUi.style.display = 'none';
+            reportTemplate.style.display = 'block';
+
+            // 3. ตั้งค่า PDF ให้ออกมาเป็นขนาด A4 แนวตั้ง (Portrait) แบบโปร
+            const opt = {
+                margin: 0, 
+                filename: 'CrowdX_Executive_Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            // 4. สั่งประมวลผล PDF
+            setTimeout(() => {
+                html2pdf().set(opt).from(reportTemplate).save().then(() => {
+                    // 5. เมื่อโหลดเสร็จแล้ว ให้สลับหน้าเว็บหลักกลับมาเหมือนเดิม
+                    reportTemplate.style.display = 'none';
+                    mainUi.style.display = 'block';
+                    showToast('Executive Report downloaded successfully.');
+                });
+            }, 100); // หน่วงเวลาเล็กน้อยเพื่อให้เบราว์เซอร์เตรียมภาพทัน
+        }
+
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function openModal() { document.getElementById('statusModal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('statusModal').classList.add('hidden'); }
+
+        const businessChart = new Chart(document.getElementById('businessChart'), {
+            type: 'line',
+            data: {
+                labels: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'],
+                datasets: [
+                    { label: 'Target Baseline', data: [1000, 2000, 3000, 4000, 5000, 6000, 7000], borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0.1, pointRadius: 0 },
+                    { label: 'Actual Visitors', data: [1200, 2500, 4100, 5800, 7200, 8450], borderColor: '#2563eb', tension: 0.3, pointRadius: 4, pointBackgroundColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true }
+                ]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+        });
+
+        const carbonChart = new Chart(document.getElementById('carbonChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['MRT/BTS', 'Bus', 'Personal Car'],
+                datasets: [{ data: [60, 25, 15], backgroundColor: ['#10b981', '#60a5fa', '#fbbf24'], borderWidth: 2, borderColor: '#ffffff', cutout: '75%' }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+
+        setInterval(async () => {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const liveBtn = document.getElementById('liveStatusBtn');
+
+            try {
+                const response = await fetch('http://localhost:3000/api/data');
+                const data = await response.json();
+                
+                statusDot.className = 'w-2 h-2 bg-emerald-500 rounded-full animate-pulse';
+                statusText.innerText = 'Live: Connected';
+                liveBtn.className = 'px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium';
+                
+                const visitorCounter = document.getElementById('visitorCount');
+                const currentDisplay = parseInt(visitorCounter.innerText.replace(/,/g, ''));
+
+                if (currentDisplay !== data.totalVisitors) {
+                    visitorCounter.innerText = data.totalVisitors.toLocaleString();
+                    visitorCounter.classList.add('text-emerald-500');
+                    setTimeout(() => visitorCounter.classList.remove('text-emerald-500'), 600);
+
+                    const bChartData = businessChart.data.datasets[1].data;
+                    const diff = data.totalVisitors - currentDisplay;
+                    bChartData[bChartData.length - 1] += diff; 
+                    businessChart.update();
+                }
+
+                document.getElementById('carbonValue').innerText = data.carbon.perVisitor.toFixed(2);
+                carbonChart.data.datasets[0].data = [data.travelModes.mrt, data.travelModes.bus, data.travelModes.car];
+                carbonChart.update();
+
+            } catch (error) {
+                statusDot.className = 'w-2 h-2 bg-slate-400 rounded-full';
+                statusText.innerText = 'Offline: Check Sensor';
+                liveBtn.className = 'px-4 py-2 rounded-full border border-slate-200 bg-slate-50 text-slate-500 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium';
+            }
+        }, 3000); 
+    </script>
+</body>
+</html>
