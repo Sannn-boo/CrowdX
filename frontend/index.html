@@ -26,6 +26,39 @@
 
     <!-- MAIN UI -->
     <div id="main-ui">
+        
+        <!-- Modal: System Status (MOCKUP MODE) -->
+        <div id="statusModal" class="fixed inset-0 bg-slate-900/40 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+            <div class="bg-white border border-blue-100 rounded-xl p-6 w-[600px] shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-slate-800">Vision AI Edge Processing</h2>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-blue-600 text-xl transition-colors">&times;</button>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Strictly for IT setup. Raw video is processed on the edge server and instantly anonymized.</p>
+                <!-- Cam 1: Expo Hall (mockup monitor) -->
+                <div class="bg-slate-50 border border-slate-200 rounded-lg relative shadow-inner mb-4 overflow-hidden">
+                    <div class="flex justify-between items-center px-3 py-2 border-b border-slate-200 bg-white">
+                        <span class="text-slate-600 text-sm font-medium">Cam 1: Expo Hall</span>
+                        <span id="camStatus" class="text-emerald-600 text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100">Status: Mockup Active</span>
+                    </div>
+                    <div class="h-[420px] bg-slate-900 flex items-center justify-center relative">
+                        <!-- Mockup Image from Unsplash representing a mall event -->
+                        <img src="https://images.unsplash.com/photo-1540317580384-e5d43616b9aa?auto=format&fit=crop&w=800&q=80" alt="Cam 1 live feed mock" class="w-full h-full object-cover opacity-60">
+                        <!-- Simulated bounding box for UI -->
+                        <div class="absolute top-1/3 left-1/4 w-12 h-24 border-2 border-green-400 rounded-sm">
+                            <span class="absolute -top-4 left-0 bg-green-400 text-white text-[8px] px-1">ID:45 V</span>
+                        </div>
+                        <div class="absolute top-1/2 left-1/2 w-16 h-32 border-2 border-green-400 rounded-sm">
+                            <span class="absolute -top-4 left-0 bg-green-400 text-white text-[8px] px-1">ID:46 V</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button onclick="closeModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">Close Monitor</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Navbar -->
         <nav class="flex justify-between items-center mb-8">
             <div class="flex items-center space-x-3">
@@ -41,6 +74,9 @@
 
             <div class="flex space-x-4">
                 <button onclick="exportFormalReport()" class="px-4 py-2 rounded-full border border-slate-200 bg-white text-slate-600 hover:text-blue-700 hover:bg-blue-50 text-sm font-medium transition-colors shadow-sm">Export Report</button>
+                <button onclick="openModal()" class="px-4 py-2 rounded-full border border-slate-200 bg-white text-sm flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm text-slate-600 font-medium">
+                    System Status
+                </button>
                 <button class="px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium">
                     <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> 
                     <span>Live UI Mode</span>
@@ -216,6 +252,14 @@
             document.getElementById('page-' + targetPageId).classList.remove('hidden');
         }
 
+        // Functions for the System Status Modal
+        function openModal() {
+            document.getElementById('statusModal').classList.remove('hidden');
+        }
+        function closeModal() {
+            document.getElementById('statusModal').classList.add('hidden');
+        }
+
         let toastTimeout;
         function showToast(message) {
             const toast = document.getElementById('toast');
@@ -229,9 +273,7 @@
             }, 3000);
         }
 
-        // ==========================================
-        // MOCK BACKEND DATA (Embedded for UI)
-        // ==========================================
+        // MOCK BACKEND DATA
         const F = (key, label, amount) => ({ key, label, kind: 'fixed', amount });
         const P = (key, label, rate, amount, share = 1) => ({ key, label, kind: 'perVisitor', rate, amount, share });
         const NO_DWELL = label => ({ label, unavailable: 'Not measured yet' });
@@ -305,7 +347,7 @@
         };
 
         let startedAt = Date.now();
-        const TIME_SCALE = 60; // Demo simulation speed
+        const TIME_SCALE = 60;
         const simNow = () => startedAt + (Date.now() - startedAt) * TIME_SCALE;
         
         let eventData = { totalVisitors: 0, carbon: { perVisitor: 0.30, totalCarbon: 0 }, travelModes: { mrt: 60, bus: 25, car: 15 } };
@@ -396,9 +438,7 @@
             };
         }
 
-        // ==========================================
-        // UI UPDATES & CHART LOGIC
-        // ==========================================
+        // CHART LOGIC
         const businessChart = new Chart(document.getElementById('businessChart'), {
             type: 'line',
             data: { labels: [], datasets: [
@@ -460,7 +500,6 @@
                 ? `<div class="bg-slate-50 border border-dashed border-slate-300 rounded-lg p-4"><p class="text-xs font-bold text-slate-400 mb-1">${k.label}</p><p class="text-xs text-slate-400">N/A</p></div>`
                 : `<div class="bg-white border border-slate-200 rounded-lg p-4"><p class="text-xs font-bold text-slate-400 mb-1">${k.label}</p><p class="text-xl font-bold text-slate-800">${fmt(k.value, 0)} <span class="text-xs font-normal text-slate-500">${k.unit||''}</span></p></div>`).join('');
 
-            // Chart update
             const step = 0.5, labels = [], target = [];
             for (let h = 0; h <= b.durationHours; h += step) { labels.push(h + 'h'); target.push(Math.round(b.breakEven * h / b.durationHours)); }
             businessChart.data.labels = labels;
@@ -473,20 +512,14 @@
             carbonChart.update();
         }
 
-        // ==========================================
-        // INITIALIZATION & SIMULATION LOOP
-        // ==========================================
         function initApp() {
-            // Load types into dropdown
             const types = Object.entries(TEMPLATES).map(([type, t]) => ({ type, name: t.name }));
             document.getElementById('cfgType').innerHTML = types.map(t => `<option value="${t.type}">${t.name}</option>`).join('');
             
-            // Set initial event type
             eventConfig = loadTemplate('green');
             document.getElementById('cfgType').value = 'green';
             updateUI();
 
-            // Simulation loop
             setInterval(() => {
                 const h = (simNow() - startedAt) / 3600000;
                 const curve = 0.4 + Math.sin(Math.min(h / eventConfig.durationHours, 1) * Math.PI);
@@ -502,10 +535,9 @@
                 eventData.travelModes.car = 100 - eventData.travelModes.mrt - eventData.travelModes.bus;
 
                 updateUI();
-            }, 2000); // update every 2 seconds
+            }, 2000);
         }
 
-        // Handle Dropdown Change
         function changeType(type) {
             eventConfig = loadTemplate(type);
             showToast(`Loaded layout for: ${TEMPLATES[type].name}`);
