@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CrowdX Dashboard - The Mall Theme</title>
+    <title>CrowdX Dashboard (Standalone UI Mode)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -11,16 +11,10 @@
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; overflow-x: hidden; }
         .card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.5rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.05); border-color: #cbd5e1; }
-        
         #toast { transition: opacity 0.3s ease, transform 0.3s ease; }
         .fade-in { animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* ซ่อนส่วนที่ไม่จำเป็นตอนปริ้นต์แบบปกติ */
-        @media print {
-            #main-ui { display: none !important; }
-            #report-template { display: block !important; }
-        }
+        @media print { #main-ui { display: none !important; } #report-template { display: block !important; } }
     </style>
 </head>
 <body class="p-6 min-h-screen relative">
@@ -30,117 +24,81 @@
         <span id="toast-message" class="font-medium text-sm">System Notification</span>
     </div>
 
-    <!-- ========================================== -->
-    <!-- MAIN UI (DASHBOARD) -->
-    <!-- ========================================== -->
+    <!-- MAIN UI -->
     <div id="main-ui">
-        <!-- Modal: System Status -->
-        <div id="statusModal" class="fixed inset-0 bg-slate-900/40 hidden flex items-center justify-center z-50 backdrop-blur-sm">
-            <div class="bg-white border border-blue-100 rounded-xl p-6 w-[600px] shadow-2xl">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-slate-800">Vision AI Edge Processing</h2>
-                    <button onclick="closeModal()" class="text-slate-400 hover:text-blue-600 text-xl transition-colors">&times;</button>
-                </div>
-                <p class="text-xs text-slate-500 mb-4">Strictly for IT setup. Raw video is processed on the edge server and instantly anonymized.</p>
-                <!-- Cam 1: Expo Hall (live monitor) -->
-                <div class="bg-slate-50 border border-slate-200 rounded-lg relative shadow-inner mb-4 overflow-hidden">
-                    <div class="flex justify-between items-center px-3 py-2 border-b border-slate-200 bg-white">
-                        <span class="text-slate-600 text-sm font-medium">Cam 1: Expo Hall</span>
-                        <span id="camStatus" class="text-slate-500 text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200">Status: Checking...</span>
-                    </div>
-                    <div class="h-[420px] bg-slate-900 flex items-center justify-center">
-                        <img id="camFeed" alt="Cam 1 live feed" class="max-h-full max-w-full object-contain hidden">
-                        <span id="camPlaceholder" class="text-slate-400 text-sm">No signal: start the vision counter with --frame-url</span>
-                    </div>
-                </div>
-                <div class="flex justify-end mt-6">
-                    <button onclick="closeModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">Close Monitor</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Navbar -->
         <nav class="flex justify-between items-center mb-8">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="showToast('Data refreshed successfully.')">
+            <div class="flex items-center space-x-3">
                 <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center font-bold text-white shadow-sm">CX</div>
                 <h1 class="text-xl font-bold text-slate-800">CrowdX <span class="text-xs text-slate-500 block font-normal">AI Smart Event & Carbon Tracker</span></h1>
             </div>
             
-            <!-- Navigation -->
-            <div class="flex space-x-2 text-sm font-medium text-slate-500 bg-white p-1 rounded-full border border-blue-100 shadow-sm" id="nav-menu">
+            <div class="flex space-x-2 text-sm font-medium text-slate-500 bg-white p-1 rounded-full border border-blue-100 shadow-sm">
                 <button onclick="switchTab('overview', this)" class="nav-btn bg-blue-50 text-blue-700 font-bold px-4 py-2 rounded-full transition-colors">Overview</button>
                 <button onclick="switchTab('business', this)" class="nav-btn hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-full transition-colors">Business</button>
                 <button onclick="switchTab('carbon', this)" class="nav-btn hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-full transition-colors">Carbon</button>
             </div>
 
-            <!-- System Controls -->
             <div class="flex space-x-4">
-                <button onclick="exportFormalReport()" class="px-4 py-2 rounded-full border border-slate-200 bg-white text-slate-600 hover:text-blue-700 hover:bg-blue-50 text-sm font-medium transition-colors shadow-sm">
-                    Export Report
-                </button>
-                <button onclick="openModal()" class="px-4 py-2 rounded-full border border-slate-200 bg-white text-sm flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm text-slate-600 font-medium">
-                    System Status
-                </button>
-                <button class="px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium" id="liveStatusBtn">
-                    <div id="statusDot" class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> 
-                    <span id="statusText">Connecting...</span>
+                <button onclick="exportFormalReport()" class="px-4 py-2 rounded-full border border-slate-200 bg-white text-slate-600 hover:text-blue-700 hover:bg-blue-50 text-sm font-medium transition-colors shadow-sm">Export Report</button>
+                <button class="px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium">
+                    <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> 
+                    <span>Live UI Mode</span>
                 </button>
             </div>
         </nav>
 
-        <!-- Header -->
         <header class="mb-8">
             <p class="text-xs font-bold text-blue-600 tracking-wider mb-2">EVENT INTELLIGENCE</p>
-            <h2 class="text-3xl font-bold mb-2 text-slate-900" id="page-title">MUICT x The Mall Green Expo 2026</h2>
-            <p class="text-slate-500 text-sm" id="page-subtitle">Dual-engine reporting: commercial performance and verified carbon impact, updated in real-time.</p>
+            <h2 class="text-3xl font-bold mb-2 text-slate-900">MUICT x The Mall Green Expo 2026</h2>
+            <p class="text-slate-500 text-sm">Standalone UI Version - No backend required. Safe for UI design.</p>
         </header>
 
-        <!-- Top KPI -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div class="card relative overflow-hidden">
                 <h3 class="text-xs text-slate-500 font-bold tracking-wider mb-2">TOTAL VERIFIED VISITORS</h3>
-                <div class="text-4xl font-bold mb-2 text-slate-800" id="visitorCount">8,450</div>
+                <div class="text-4xl font-bold mb-2 text-slate-800" id="visitorCount">0</div>
                 <div class="flex items-center gap-2 text-xs">
-                    <span class="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md border border-emerald-100 font-medium">+12% trend</span>
-                    <span class="text-slate-400">vs. previous expo day</span>
+                    <span id="paceBadge" class="bg-slate-50 text-slate-500 px-2 py-1 rounded-md border border-slate-200 font-medium">Collecting data...</span>
+                    <span class="text-slate-400">vs. linear target to break-even</span>
                 </div>
             </div>
         </div>
 
-        <!-- ========================================== -->
         <!-- OVERVIEW -->
-        <!-- ========================================== -->
         <div id="page-overview" class="page-content block fade-in">
             <div class="grid grid-cols-2 gap-6 mb-6">
-                <!-- Business Engine -->
+                <!-- Business -->
                 <div class="card flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="font-bold text-blue-700">Business Engine</h3>
-                            <span class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">Commercial Data</span>
                         </div>
                         <div class="grid grid-cols-2 gap-4 mb-6">
                             <div>
                                 <p class="text-xs font-bold text-slate-400 mb-1">NET VALUE</p>
-                                <p class="text-2xl font-bold text-blue-600">45.50 <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
+                                <p class="text-2xl font-bold text-blue-600"><span id="bizNet">-</span> <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
                             </div>
                             <div>
                                 <p class="text-xs font-bold text-slate-400 mb-1">COST</p>
-                                <p class="text-2xl font-bold text-slate-700">17.75 <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
+                                <p class="text-2xl font-bold text-slate-700"><span id="bizCost">-</span> <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
                             </div>
                         </div>
                     </div>
                     <div class="mt-4">
+                        <div class="flex justify-between text-xs text-slate-500 mb-1">
+                            <span>Break-even progress</span><span id="bizProgressText">-</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-100 rounded-full mb-4 overflow-hidden"><div id="bizBar" class="h-2 bg-blue-500 rounded-full" style="width:0%"></div></div>
                         <canvas id="businessChart" height="150"></canvas>
                     </div>
                 </div>
 
-                <!-- Carbon Engine -->
+                <!-- Carbon -->
                 <div class="card flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="font-bold text-emerald-700">Carbon Engine</h3>
-                            <span class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">ESG Data</span>
                         </div>
                         <div class="mb-6">
                             <p class="text-xs font-bold text-slate-400 mb-1">CARBON PER VISITOR</p>
@@ -160,14 +118,10 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Spillover -->
+            
             <div class="card">
                 <div class="flex justify-between items-center mb-4">
-                    <div>
-                        <h3 class="font-bold mb-1 text-slate-800">Spillover Lift Analysis</h3>
-                        <p class="text-xs text-slate-500">Incremental traffic pushed from the expo hall into adjacent mall zones</p>
-                    </div>
+                    <div><h3 class="font-bold mb-1 text-slate-800">Spillover Lift Analysis</h3><p class="text-xs text-slate-500">Incremental traffic pushed from the expo hall into adjacent mall zones</p></div>
                     <span class="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-bold shadow-sm">Net mall lift +10.4%</span>
                 </div>
                 <div class="grid grid-cols-5 gap-4 mt-6 text-center">
@@ -180,40 +134,51 @@
             </div>
         </div>
 
-        <!-- ========================================== -->
         <!-- BUSINESS DETAILED -->
-        <!-- ========================================== -->
         <div id="page-business" class="page-content hidden fade-in">
             <div class="card mb-6">
-                <h3 class="font-bold text-blue-700 mb-4 text-xl">Detailed Commercial Performance</h3>
+                <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+                    <h3 class="font-bold text-blue-700 text-xl">Detailed Commercial Performance</h3>
+                    <label class="text-xs text-slate-500 font-bold">Event type
+                        <select id="cfgType" onchange="changeType(this.value)" class="ml-2 border border-slate-300 rounded-md p-2 text-sm text-slate-900 bg-white font-medium cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+                    </label>
+                </div>
                 <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg text-sm text-slate-700 mb-6 flex justify-between items-center">
-                    <span><span class="text-blue-700 font-bold">Live Insight:</span> We need 1,550 more visitors to reach the break-even target.</span>
-                    <span class="font-bold text-slate-900">Estimated time: 3 hours</span>
+                    <span><span class="text-blue-700 font-bold">Live Insight:</span> <span id="bizInsight">Waiting for data...</span></span>
+                    <span class="font-bold text-slate-900" id="bizEta">Estimated time: -</span>
                 </div>
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="text-xs text-slate-400 bg-slate-50 border-b border-slate-200">
                         <tr><th class="p-3">Cost Component</th><th class="p-3">Budget Allocation</th><th class="p-3">Cost per Visitor (Current)</th></tr>
                     </thead>
-                    <tbody>
-                        <tr class="border-b border-slate-100"><td class="p-3">Marketing & Ads</td><td class="p-3 font-medium text-slate-700">50,000 THB</td><td class="p-3">5.91 THB</td></tr>
-                        <tr class="border-b border-slate-100"><td class="p-3">Venue Setup & Operations</td><td class="p-3 font-medium text-slate-700">75,000 THB</td><td class="p-3">8.87 THB</td></tr>
-                        <tr><td class="p-3">Miscellaneous</td><td class="p-3 font-medium text-slate-700">25,000 THB</td><td class="p-3">2.95 THB</td></tr>
-                    </tbody>
+                    <tbody id="bizTable"></tbody>
                     <tfoot class="bg-slate-50 font-bold text-blue-700 border-t border-slate-200">
-                        <tr><td class="p-3">Total Estimated Cost</td><td class="p-3">150,000 THB</td><td class="p-3">17.75 THB / pax</td></tr>
+                        <tr><td class="p-3">Total Estimated Cost</td><td class="p-3" id="bizTotalCost">-</td><td class="p-3" id="bizTotalPer">-</td></tr>
                     </tfoot>
                 </table>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 text-sm">
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs font-bold text-slate-400 mb-1">BREAK-EVEN VISITORS</p><p class="text-xl font-bold text-slate-800" id="bizBreakEven">-</p></div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs font-bold text-slate-400 mb-1">CONTRIBUTION / PAX</p><p class="text-xl font-bold text-slate-800"><span id="bizValue">-</span> <span class="text-xs font-normal text-slate-500">THB</span></p></div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs font-bold text-slate-400 mb-1">FORECAST END EVENT</p><p class="text-xl font-bold text-slate-800" id="bizForecast">-</p></div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs font-bold text-slate-400 mb-1">NET PROFIT SO FAR</p><p class="text-xl font-bold text-slate-800"><span id="bizNetTotal">-</span> <span class="text-xs font-normal text-slate-500">THB</span></p></div>
+                </div>
+
+                <h4 class="font-bold text-slate-700 mt-8 mb-3">Revenue Streams</h4>
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="text-xs text-slate-400 bg-slate-50 border-b border-slate-200"><tr><th class="p-3">Stream</th><th class="p-3">Basis</th><th class="p-3">Revenue so far</th></tr></thead>
+                    <tbody id="bizStreams"></tbody>
+                </table>
+
+                <h4 class="font-bold text-slate-700 mt-8 mb-3">Event-specific KPIs</h4>
+                <div id="bizKpis" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
             </div>
         </div>
 
-        <!-- ========================================== -->
         <!-- CARBON DETAILED -->
-        <!-- ========================================== -->
         <div id="page-carbon" class="page-content hidden fade-in">
             <div class="grid grid-cols-2 gap-6">
                 <div class="card">
                     <h3 class="font-bold text-emerald-700 mb-4 text-xl">GHG Emissions Breakdown</h3>
-                    <p class="text-sm text-slate-500 mb-6">Following TGO & GHG Protocol Standards</p>
                     <div class="space-y-4">
                         <div class="flex justify-between items-center p-3 border border-slate-100 rounded-lg bg-slate-50">
                             <div><p class="font-bold text-slate-700">Scope 2: Electricity</p><p class="text-xs text-slate-400">Area-based MVP estimation</p></div>
@@ -229,178 +194,27 @@
                         </div>
                     </div>
                 </div>
-                <div class="card flex flex-col justify-center items-center text-center bg-gradient-to-b from-white to-emerald-50/30">
-                    <h3 class="text-2xl font-bold text-emerald-700 mb-2">Green Event Eligible</h3>
-                    <p class="text-slate-500 text-sm px-6">With a current carbon footprint 15% below standard, this event is on track to receive The Mall Group's Green Event Certification.</p>
-                </div>
             </div>
         </div>
-    </div> <!-- End of MAIN UI -->
+    </div>
 
-    <!-- ========================================== -->
     <!-- HIDDEN REPORT TEMPLATE (For PDF Export) -->
-    <!-- ========================================== -->
     <div id="report-template" class="hidden bg-white p-10 max-w-4xl mx-auto text-slate-800">
-        <!-- Report Header -->
-        <div class="border-b-2 border-blue-800 pb-6 mb-8 flex justify-between items-end">
-            <div>
-                <p class="text-sm font-bold text-slate-500 tracking-widest uppercase mb-1">Executive Summary Report</p>
-                <h1 class="text-3xl font-extrabold text-blue-900">MUICT x The Mall Green Expo 2026</h1>
-                <p class="text-slate-600 mt-2">Post-Event Analytics and ESG Performance Document</p>
-            </div>
-            <div class="text-right">
-                <div class="w-12 h-12 bg-blue-800 rounded flex items-center justify-center font-bold text-white mb-2 ml-auto">CX</div>
-                <p class="text-xs text-slate-500 font-medium">Generated via CrowdX System</p>
-                <p class="text-xs text-slate-500" id="rep-time">DD/MM/YYYY HH:MM</p>
-            </div>
-        </div>
+        <h1 class="text-3xl font-extrabold text-blue-900">MUICT x The Mall Green Expo 2026</h1>
+        <p class="text-sm">Mockup Report Exported Successfully</p>
+    </div>
 
-        <!-- Section 1: Executive Summary -->
-        <div class="mb-8">
-            <h2 class="text-lg font-bold text-blue-800 mb-3 border-l-4 border-blue-600 pl-3">1. Executive Overview</h2>
-            <p class="text-sm text-slate-700 leading-relaxed">
-                This report provides a verified analysis of the event's overall performance. Data has been acquired utilizing CrowdX Edge AI integration, ensuring precise visitor counting while maintaining strict compliance with the Personal Data Protection Act (PDPA). The metrics below encompass both commercial viability and environmental impact.
-            </p>
-        </div>
-
-        <!-- Section 2: Core Metrics & Business -->
-        <div class="mb-8">
-            <h2 class="text-lg font-bold text-blue-800 mb-3 border-l-4 border-blue-600 pl-3">2. Commercial Performance Metrics</h2>
-            <div class="grid grid-cols-3 gap-4 mb-4">
-                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
-                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Total Verified Visitors</p>
-                    <p class="text-2xl font-bold text-blue-900" id="rep-visitors">0</p>
-                </div>
-                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
-                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Net Value per Pax</p>
-                    <p class="text-2xl font-bold text-blue-900">45.50 THB</p>
-                </div>
-                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
-                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Estimated Cost per Pax</p>
-                    <p class="text-2xl font-bold text-slate-700">17.75 THB</p>
-                </div>
-            </div>
-            <p class="text-xs text-slate-500 italic">* Note: Baseline cost calculations include marketing, venue setup, and operational operations.</p>
-        </div>
-
-        <!-- Section 3: ESG Impact -->
-        <div class="mb-8">
-            <h2 class="text-lg font-bold text-blue-800 mb-3 border-l-4 border-emerald-500 pl-3">3. Environmental, Social, and Governance (ESG) Impact</h2>
-            <p class="text-sm text-slate-700 leading-relaxed mb-4">
-                Carbon emission computations are aligned with the Thailand Greenhouse Gas Management Organization (TGO) standards. Transportation modes are classified via visual detection algorithms.
-            </p>
-            <div class="grid grid-cols-2 gap-6">
-                <div>
-                    <table class="w-full text-sm text-left border-collapse border border-slate-300">
-                        <thead class="bg-slate-100">
-                            <tr>
-                                <th class="border border-slate-300 p-2 text-slate-700">Metric Description</th>
-                                <th class="border border-slate-300 p-2 text-slate-700">Current Value</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="border border-slate-300 p-2">Average Carbon per Visitor</td>
-                                <td class="border border-slate-300 p-2 font-bold text-emerald-700"><span id="rep-carbon">0.00</span> kgCO2e</td>
-                            </tr>
-                            <tr>
-                                <td class="border border-slate-300 p-2">Scope 2: Electricity Estimation</td>
-                                <td class="border border-slate-300 p-2">1,662 kgCO2e</td>
-                            </tr>
-                            <tr>
-                                <td class="border border-slate-300 p-2">Scope 3: Verified Travel</td>
-                                <td class="border border-slate-300 p-2">525 kgCO2e</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="bg-slate-50 border border-slate-200 p-4 rounded flex flex-col justify-center">
-                    <p class="text-xs font-bold text-slate-500 uppercase mb-2">Visitor Transportation Breakdown</p>
-                    <div class="space-y-2 text-sm text-slate-700 font-medium">
-                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Mass Transit (MRT/BTS):</span> <span id="rep-mrt">0%</span></div>
-                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Public Bus:</span> <span id="rep-bus">0%</span></div>
-                        <div class="flex justify-between"><span>Personal Vehicle:</span> <span id="rep-car">0%</span></div>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded text-sm text-emerald-800 font-medium">
-                Status: Eligible for The Mall Group Green Event Certification (Currently operating 15% below standard emission baselines).
-            </div>
-        </div>
-
-        <!-- Section 4: Compliance -->
-        <div class="mt-12 pt-6 border-t border-slate-200">
-            <h2 class="text-sm font-bold text-slate-800 mb-2">System Integrity and Compliance Statement</h2>
-            <p class="text-xs text-slate-500 text-justify">
-                This report is automatically generated by the CrowdX Analytics Engine. All physical visitor data has been processed exclusively on local edge servers without the retention of Personally Identifiable Information (PII) or facial records. The implementation strictly adheres to the Personal Data Protection Act (PDPA) regulations mandated in the Kingdom of Thailand.
-            </p>
-        </div>
-    </div> <!-- End of REPORT TEMPLATE -->
-
-    <!-- Scripts -->
+    <!-- UI JAVASCRIPT & MOCK BACKEND -->
     <script>
         function switchTab(targetPageId, btnElement) {
-            const navBtns = document.querySelectorAll('.nav-btn');
-            navBtns.forEach(b => {
+            document.querySelectorAll('.nav-btn').forEach(b => {
                 b.classList.remove('bg-blue-50', 'text-blue-700', 'font-bold');
                 b.classList.add('hover:text-blue-700', 'hover:bg-blue-50');
             });
             btnElement.classList.remove('hover:text-blue-700', 'hover:bg-blue-50');
             btnElement.classList.add('bg-blue-50', 'text-blue-700', 'font-bold');
-
-            const pages = document.querySelectorAll('.page-content');
-            pages.forEach(p => {
-                p.classList.remove('block');
-                p.classList.add('hidden');
-            });
-
-            const targetPage = document.getElementById('page-' + targetPageId);
-            targetPage.classList.remove('hidden');
-            targetPage.classList.add('block');
-        }
-
-        // Exportformal report 
-        function exportFormalReport() {
-            showToast('Preparing Executive Summary Report...');
-            
-            // Report Real-time
-            document.getElementById('rep-visitors').innerText = document.getElementById('visitorCount').innerText;
-            document.getElementById('rep-carbon').innerText = document.getElementById('carbonValue').innerText;
-            
-            const transportData = carbonChart.data.datasets[0].data;
-            document.getElementById('rep-mrt').innerText = transportData[0] + '%';
-            document.getElementById('rep-bus').innerText = transportData[1] + '%';
-            document.getElementById('rep-car').innerText = transportData[2] + '%';
-
-            // Add the real-time timestamp to the report
-            const now = new Date();
-            document.getElementById('rep-time').innerText = now.toLocaleString('en-GB');
-
-            // 2. สลับซ่อนหน้าเว็บหลัก และเปิดหน้าเทมเพลตรายงาน
-            const mainUi = document.getElementById('main-ui');
-            const reportTemplate = document.getElementById('report-template');
-            
-            mainUi.style.display = 'none';
-            reportTemplate.style.display = 'block';
-
-            // 3. ตั้งค่า PDF ให้ออกมาเป็นขนาด A4 แนวตั้ง (Portrait) แบบโปร
-            const opt = {
-                margin: 0, 
-                filename: 'CrowdX_Executive_Report.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-            };
-
-            // 4. สั่งประมวลผล PDF
-            setTimeout(() => {
-                html2pdf().set(opt).from(reportTemplate).save().then(() => {
-                    // 5. เมื่อโหลดเสร็จแล้ว ให้สลับหน้าเว็บหลักกลับมาเหมือนเดิม
-                    reportTemplate.style.display = 'none';
-                    mainUi.style.display = 'block';
-                    showToast('Executive Report downloaded successfully.');
-                });
-            }, 100); // หน่วงเวลาเล็กน้อยเพื่อให้เบราว์เซอร์เตรียมภาพทัน
+            document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden', 'block'));
+            document.getElementById('page-' + targetPageId).classList.remove('hidden');
         }
 
         let toastTimeout;
@@ -416,103 +230,290 @@
             }, 3000);
         }
 
-        // Live monitor: the stream only runs while the modal is open, to save bandwidth
-        let camTimer;
-        function openModal() {
-            document.getElementById('statusModal').classList.remove('hidden');
-            updateCamStatus();
-            camTimer = setInterval(updateCamStatus, 2000);
-        }
-        function closeModal() {
-            document.getElementById('statusModal').classList.add('hidden');
-            clearInterval(camTimer);
-            const feed = document.getElementById('camFeed');
-            feed.removeAttribute('src');
-            feed.classList.add('hidden');
-            document.getElementById('camPlaceholder').classList.remove('hidden');
-        }
-        async function updateCamStatus() {
-            const status = document.getElementById('camStatus');
-            const feed = document.getElementById('camFeed');
-            const placeholder = document.getElementById('camPlaceholder');
-            let online = false;
-            try {
-                online = (await (await fetch('http://localhost:3000/api/camera')).json()).online;
-            } catch (e) { /* backend offline */ }
+        // ==========================================
+        // MOCK BACKEND DATA (Embedded for UI)
+        // ==========================================
+        const F = (key, label, amount) => ({ key, label, kind: 'fixed', amount });
+        const P = (key, label, rate, amount, share = 1) => ({ key, label, kind: 'perVisitor', rate, amount, share });
+        const NO_DWELL = label => ({ label, unavailable: 'Not measured yet' });
+        const NO_REPEAT = { label: 'Repeat visit', unavailable: 'Not measured (PDPA)' };
 
-            if (online) {
-                status.className = 'text-emerald-600 text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100';
-                status.innerText = 'Status: Counting';
-                if (!feed.getAttribute('src')) feed.src = 'http://localhost:3000/api/stream';
-                feed.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-            } else {
-                status.className = 'text-slate-500 text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200';
-                status.innerText = 'Status: Offline';
-                feed.removeAttribute('src');
-                feed.classList.add('hidden');
-                placeholder.classList.remove('hidden');
+        const TEMPLATES = {
+            concert: {
+                name: 'Concert / Music Festival', duration: 8,
+                fixedCosts: [['Artist & production', 450000], ['Stage & venue', 180000], ['Marketing', 75000]],
+                variableCosts: [['Extra security & staffing', 5], ['Waste handling', 1.5], ['Giveaways', 3]],
+                streams: [F('sponsor', 'Sponsorship', 200000), P('ticket', 'Tickets', 0.15, 400), P('fnb', 'F&B (mall share)', 0.4, 100, 0.3), P('merch', 'Merchandise (mall share)', 0.08, 400, 0.3)],
+                inputs: [['ticketsSold', 'Tickets sold so far', 'tickets']],
+                kpis: [{ label: 'Tickets sold', num: 'input.ticketsSold', unit: 'tickets' }, { label: 'F&B revenue per visitor', num: 'stream.fnb', den: 'n', unit: 'THB' }, NO_DWELL('Viewers who stay (dwell)')]
+            },
+            popup: {
+                name: 'Pop-up / Brand Activation', duration: 8,
+                fixedCosts: [['Booth build', 120000], ['Marketing', 80000], ['Miscellaneous', 34000]],
+                variableCosts: [['Giveaways & samples', 8], ['Product sampling', 3], ['Extra staff', 4]],
+                streams: [F('brand', 'Brand event fee', 120000), F('booth', 'Booth fee', 30000), P('sales', 'Product sales (mall share)', 0.12, 900, 0.25)],
+                inputs: [['leads', 'Leads collected so far', 'leads']],
+                kpis: [{ label: 'Cost per lead', num: 'totalCost', den: 'input.leads', unit: 'THB' }, { label: 'Conversion (leads / visitors)', num: 'input.leads', den: 'n', pct: true, unit: '%' }, { label: 'Sales per visitor', num: 'stream.sales', den: 'n', unit: 'THB' }]
+            },
+            foodfest: {
+                name: 'Food Festival', duration: 8,
+                fixedCosts: [['Setup & facilities', 200000], ['Staffing', 120000], ['Marketing', 81800]],
+                variableCosts: [['Waste & cleaning', 4], ['Electricity', 3], ['Safety', 2]],
+                streams: [F('rent', 'Booth rent', 180000), F('sponsor', 'Sponsorship', 100000), P('fee', 'Vendor fee on sales', 0.6, 220, 0.2)],
+                inputs: [['totalSales', 'Total vendor sales so far (THB)', 'THB'], ['booths', 'Booths', 'booths'], ['profitableBooths', 'Booths already profitable', 'booths']],
+                kpis: [{ label: 'Vendor spend per visitor', num: 'input.totalSales', den: 'n', unit: 'THB' }, { label: 'Booths that break even', num: 'input.profitableBooths', den: 'input.booths', pct: true, unit: '%' }]
+            },
+            exhibition: {
+                name: 'Exhibition / Convention', duration: 8,
+                fixedCosts: [['Venue', 500000], ['Production', 300000], ['Marketing', 160000]],
+                variableCosts: [['Badge & kit', 20], ['Snacks', 15]],
+                streams: [F('booth', 'Exhibitor booth fees', 350000), F('sponsor', 'B2B sponsorship', 150000), P('reg', 'Registration fees', 0.5, 300)],
+                inputs: [['leads', 'Leads collected so far', 'leads'], ['exhibitors', 'Exhibitors', 'exhibitors'], ['activated', 'Booths activated', 'booths']],
+                kpis: [{ label: 'Leads per exhibitor', num: 'input.leads', den: 'input.exhibitors', unit: 'leads' }, { label: 'Booths activated', num: 'input.activated', den: 'input.exhibitors', pct: true, unit: '%' }]
+            },
+            sports: {
+                name: 'Sports / Basketball Event', duration: 8,
+                fixedCosts: [['Venue & equipment', 250000], ['Referees & staff', 130000], ['Marketing', 74000]],
+                variableCosts: [['Equipment wear', 8], ['Security & staffing', 2]],
+                streams: [F('sponsor', 'Sponsorship', 150000), F('teams', 'Team registration', 80000), P('entry', 'Spectator entry', 0.3, 100), P('merch', 'Merchandise (mall share)', 0.1, 400, 0.3)],
+                inputs: [['teams', 'Teams', 'teams'], ['rounds', 'Rounds played so far', 'rounds']],
+                kpis: [{ label: 'Teams competing', num: 'input.teams', unit: 'teams' }, { label: 'Spectators per round', num: 'n', den: 'input.rounds', unit: 'people' }, { label: 'Merchandise per visitor', num: 'stream.merch', den: 'n', unit: 'THB' }]
+            },
+            workshop: {
+                name: 'Workshop / Class', duration: 4,
+                fixedCosts: [['Venue', 40000], ['Instructors', 35000], ['Marketing', 17500]],
+                variableCosts: [['Materials', 90], ['Snacks', 30], ['Equipment wear', 20]],
+                streams: [F('sponsor', 'Sponsorship', 40000), P('seat', 'Seat fees', 0.9, 350)],
+                inputs: [['registered', 'Registered seats', 'seats']],
+                kpis: [{ label: 'No-show rate', num: 'n', den: 'input.registered', oneMinus: true, pct: true, unit: '%' }, { label: 'Revenue per seat', num: 'totalRevenue', den: 'input.registered', unit: 'THB' }]
+            },
+            family: {
+                name: 'Family / Kids Event', duration: 8,
+                fixedCosts: [['Activities & props', 300000], ['Marketing', 120000], ['Staffing', 96200]],
+                variableCosts: [['Toys & giveaways', 12], ['Safety staff', 4]],
+                streams: [F('sponsor', 'Sponsorship', 120000), P('activity', 'Activity fees', 0.4, 150), P('fnb', 'F&B (mall share)', 0.35, 120, 0.3)],
+                inputs: [['families', 'Families counted so far', 'families']],
+                kpis: [{ label: 'Revenue per family', num: 'totalRevenue', den: 'input.families', unit: 'THB' }, NO_DWELL('Dwell time'), NO_REPEAT]
+            },
+            green: {
+                name: 'Green / Sustainability Event', duration: 8,
+                fixedCosts: [['Booth setup', 250000], ['Marketing', 150000], ['Carbon audit & offset', 119500]],
+                variableCosts: [['Recycling', 3], ['Energy', 2]],
+                streams: [F('sponsor', 'ESG sponsorship', 250000), P('fee', 'Registration fees', 0.25, 120), P('shop', 'Shop sales (mall share)', 0.3, 150, 0.3)],
+                inputs: [],
+                kpis: [{ label: 'Carbon per visitor (placeholder)', num: 'carbon', unit: 'kgCO2e' }, { label: 'Visitors per 1,000 THB sponsorship', num: 'n', den: 'stream.sponsor', scale: 1000, unit: 'people' }]
             }
+        };
+
+        let startedAt = Date.now();
+        const TIME_SCALE = 60; // Demo simulation speed
+        const simNow = () => startedAt + (Date.now() - startedAt) * TIME_SCALE;
+        
+        let eventData = { totalVisitors: 0, carbon: { perVisitor: 0.30, totalCarbon: 0 }, travelModes: { mrt: 60, bus: 25, car: 15 } };
+        let history = [{ t: simNow(), total: 0 }];
+        let eventConfig = null;
+
+        function loadTemplate(type) {
+            const T = TEMPLATES[type];
+            return {
+                isDemoData: true, type, durationHours: T.duration,
+                fixedCosts: T.fixedCosts.map(([name, amount]) => ({ name, amount })),
+                variableCosts: T.variableCosts.map(([name, perVisitor]) => ({ name, perVisitor })),
+                streams: T.streams.map(s => ({ ...s })),
+                inputs: Object.fromEntries(T.inputs.map(([k]) => [k, 0]))
+            };
         }
 
+        function totalAt(t) {
+            let v = 0;
+            for (const h of history) { if (h.t <= t) v = h.total; else break; }
+            return v;
+        }
+
+        function calcBusiness() {
+            const c = eventConfig, T = TEMPLATES[c.type], n = eventData.totalVisitors;
+            const sum = (arr, f) => arr.reduce((t, x) => t + f(x), 0);
+            
+            const fixedCost = sum(c.fixedCosts, i => i.amount);
+            const varPerHead = sum(c.variableCosts, i => i.perVisitor);
+            const revPerHead = sum(c.streams.filter(s => s.kind === 'perVisitor'), s => s.rate * s.amount * s.share);
+            const contribution = revPerHead - varPerHead;
+
+            const streamRev = {};
+            const streams = c.streams.map(s => {
+                const revenue = s.kind === 'fixed' ? s.amount : n * s.rate * s.amount * s.share;
+                streamRev[s.key] = revenue;
+                return { ...s, revenue };
+            });
+            const fixedRev = sum(c.streams.filter(s => s.kind === 'fixed'), s => s.amount);
+            const totalRevenue = sum(streams, s => s.revenue);
+            const totalCost = fixedCost + n * varPerHead;
+            const netTotal = totalRevenue - totalCost;
+            const breakEven = Math.ceil(Math.max(0, fixedCost - fixedRev) / contribution);
+
+            const elapsedH = (simNow() - startedAt) / 3600000;
+            const hoursLeft = Math.max(0, c.durationHours - elapsedH);
+            const windowH = Math.min(1, elapsedH);
+            const perHour = windowH >= 1 / 6 ? (n - totalAt(simNow() - windowH * 3600000)) / windowH : null;
+
+            const forecastFinal = perHour === null ? null : Math.round(n + perHour * hoursLeft);
+            let status = n >= breakEven ? 'reached' : (perHour === null ? 'collecting' : (forecastFinal >= breakEven ? 'on_track' : 'at_risk'));
+            const targetNow = breakEven * Math.min(1, elapsedH / c.durationHours);
+            const paceVsTarget = targetNow > 0 ? n / targetNow - 1 : null;
+
+            const curve = [];
+            const maxH = Math.min(elapsedH, c.durationHours);
+            for (let h = 0; h <= maxH; h += 0.5) curve.push({ h, total: totalAt(startedAt + h * 3600000) });
+            curve.push({ h: maxH, total: n });
+
+            const get = k => {
+                if (k === 'n') return n;
+                if (k === 'totalCost') return totalCost;
+                if (k === 'totalRevenue') return totalRevenue;
+                if (k === 'carbon') return eventData.carbon.perVisitor;
+                return k.startsWith('stream.') ? streamRev[k.slice(7)] : c.inputs[k.slice(6)];
+            };
+            
+            const kpis = T.kpis.map(k => {
+                if (k.unavailable) return { label: k.label, unavailable: k.unavailable };
+                const a = get(k.num), d = k.den ? get(k.den) : 1;
+                let value = (a !== null && d > 0) ? a / d : null;
+                if (value !== null && k.oneMinus) value = Math.max(0, 1 - value);
+                if (value !== null && k.pct) value *= 100;
+                if (value !== null && k.scale) value *= k.scale;
+                return { label: k.label, unit: k.unit, value };
+            });
+
+            return {
+                type: c.type, status, breakEven, remaining: Math.max(0, breakEven - n),
+                progress: breakEven === 0 ? 1 : Math.min(1, n / breakEven),
+                contributionPerVisitor: contribution, costPerVisitor: n > 0 ? totalCost / n : null,
+                netValuePerVisitor: n > 0 ? netTotal / n : null, netTotal, totalCost,
+                fixedCosts: c.fixedCosts.map(i => ({ ...i, perVisitor: n > 0 ? i.amount / n : null })),
+                variableCosts: c.variableCosts.map(i => ({ ...i, amount: n * i.perVisitor })),
+                streams, kpis, forecastFinal, paceVsTarget,
+                hoursToBreakEven: (Math.max(0, breakEven - n) === 0 ? 0 : (perHour > 0 ? Math.max(0, breakEven - n) / perHour : null)),
+                curve, durationHours: c.durationHours, isDemoData: true
+            };
+        }
+
+        // ==========================================
+        // UI UPDATES & CHART LOGIC
+        // ==========================================
         const businessChart = new Chart(document.getElementById('businessChart'), {
             type: 'line',
-            data: {
-                labels: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'],
-                datasets: [
-                    { label: 'Target Baseline', data: [1000, 2000, 3000, 4000, 5000, 6000, 7000], borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0.1, pointRadius: 0 },
-                    { label: 'Actual Visitors', data: [1200, 2500, 4100, 5800, 7200, 8450], borderColor: '#2563eb', tension: 0.3, pointRadius: 4, pointBackgroundColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true }
-                ]
-            },
+            data: { labels: [], datasets: [
+                { label: 'Target', data: [], borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, pointRadius: 0 },
+                { label: 'Actual', data: [], borderColor: '#2563eb', tension: 0.3, pointRadius: 2, backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true }
+            ]},
             options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
         });
 
         const carbonChart = new Chart(document.getElementById('carbonChart'), {
             type: 'doughnut',
-            data: {
-                labels: ['MRT/BTS', 'Bus', 'Personal Car'],
-                datasets: [{ data: [60, 25, 15], backgroundColor: ['#10b981', '#60a5fa', '#fbbf24'], borderWidth: 2, borderColor: '#ffffff', cutout: '75%' }]
-            },
-            options: { responsive: true, plugins: { legend: { display: false } } }
+            data: { labels: ['MRT/BTS', 'Bus', 'Personal Car'], datasets: [{ data: [60, 25, 15], backgroundColor: ['#10b981', '#60a5fa', '#fbbf24'], borderWidth: 2 }] },
+            options: { responsive: true, plugins: { legend: { display: false } }, cutout: '75%' }
         });
 
-        setInterval(async () => {
-            const statusDot = document.getElementById('statusDot');
-            const statusText = document.getElementById('statusText');
-            const liveBtn = document.getElementById('liveStatusBtn');
+        const fmt = (v, d = 2) => (v === null || v === undefined) ? '-' : v.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
+        const fmtInt = v => (v === null || v === undefined) ? '-' : Math.round(v).toLocaleString();
+        const setText = (id, t) => { document.getElementById(id).innerText = t; };
 
-            try {
-                const response = await fetch('http://localhost:3000/api/data');
-                const data = await response.json();
-                
-                statusDot.className = 'w-2 h-2 bg-emerald-500 rounded-full animate-pulse';
-                statusText.innerText = 'Live: Connected';
-                liveBtn.className = 'px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium';
-                
-                const visitorCounter = document.getElementById('visitorCount');
-                const currentDisplay = parseInt(visitorCounter.innerText.replace(/,/g, ''));
+        function updateUI() {
+            const b = calcBusiness();
+            document.getElementById('visitorCount').innerText = eventData.totalVisitors.toLocaleString();
+            
+            setText('bizNet', fmt(b.netValuePerVisitor));
+            setText('bizCost', fmt(b.costPerVisitor));
+            setText('bizBreakEven', fmtInt(b.breakEven));
+            setText('bizValue', fmt(b.contributionPerVisitor));
+            setText('bizForecast', fmtInt(b.forecastFinal));
+            setText('bizNetTotal', fmtInt(b.netTotal));
+            setText('bizProgressText', fmtInt(b.progress * b.breakEven) + ' / ' + fmtInt(b.breakEven) + ' (' + Math.round(b.progress * 100) + '%)');
+            document.getElementById('bizBar').style.width = (b.progress * 100) + '%';
 
-                if (currentDisplay !== data.totalVisitors) {
-                    visitorCounter.innerText = data.totalVisitors.toLocaleString();
-                    visitorCounter.classList.add('text-emerald-500');
-                    setTimeout(() => visitorCounter.classList.remove('text-emerald-500'), 600);
-
-                    const bChartData = businessChart.data.datasets[1].data;
-                    const diff = data.totalVisitors - currentDisplay;
-                    bChartData[bChartData.length - 1] += diff; 
-                    businessChart.update();
-                }
-
-                document.getElementById('carbonValue').innerText = data.carbon.perVisitor.toFixed(2);
-                carbonChart.data.datasets[0].data = [data.travelModes.mrt, data.travelModes.bus, data.travelModes.car];
-                carbonChart.update();
-
-            } catch (error) {
-                statusDot.className = 'w-2 h-2 bg-slate-400 rounded-full';
-                statusText.innerText = 'Offline: Check Sensor';
-                liveBtn.className = 'px-4 py-2 rounded-full border border-slate-200 bg-slate-50 text-slate-500 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium';
+            const pace = document.getElementById('paceBadge');
+            if (b.paceVsTarget === null) { pace.innerText = 'Collecting data...'; }
+            else {
+                const pct = Math.round(b.paceVsTarget * 100);
+                pace.innerText = (pct >= 0 ? '+' : '') + pct + '% vs target';
+                pace.className = 'px-2 py-1 rounded-md border font-medium ' + (pct >= 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-200');
             }
-        }, 3000); 
+
+            const txts = {
+                reached: 'Break-even reached. Net profit so far: ' + fmtInt(b.netTotal) + ' THB.',
+                on_track: 'We need ' + fmtInt(b.remaining) + ' more visitors. On track.',
+                at_risk: 'We need ' + fmtInt(b.remaining) + ' more visitors. At risk of missing target.',
+                collecting: 'Collecting data for the forecast...'
+            };
+            setText('bizInsight', txts[b.status]);
+            setText('bizEta', 'Estimated time: ' + (b.hoursToBreakEven ? b.hoursToBreakEven.toFixed(1) + ' hours' : '-'));
+
+            let rows = b.fixedCosts.map(i => `<tr class="border-b border-slate-100"><td class="p-3">${i.name}</td><td class="p-3 font-medium text-slate-700">${fmtInt(i.amount)} THB</td><td class="p-3">${fmt(i.perVisitor)} THB</td></tr>`);
+            b.variableCosts.forEach(i => rows.push(`<tr class="border-b border-slate-100"><td class="p-3">${i.name}</td><td class="p-3 font-medium text-slate-700">${fmtInt(i.amount)} THB so far</td><td class="p-3">${fmt(i.perVisitor)} THB</td></tr>`));
+            document.getElementById('bizTable').innerHTML = rows.join('');
+            setText('bizTotalCost', fmtInt(b.totalCost) + ' THB so far');
+            setText('bizTotalPer', fmt(b.costPerVisitor) + ' THB / pax');
+
+            document.getElementById('bizStreams').innerHTML = b.streams.map(s => `<tr class="border-b border-slate-100"><td class="p-3">${s.label}</td><td class="p-3 text-xs text-slate-500">${s.kind === 'fixed' ? 'fixed amount' : fmt(s.rate*100,1)+'% pay'}</td><td class="p-3 font-medium text-slate-700">${fmtInt(s.revenue)} THB</td></tr>`).join('');
+            
+            document.getElementById('bizKpis').innerHTML = b.kpis.map(k => k.unavailable 
+                ? `<div class="bg-slate-50 border border-dashed border-slate-300 rounded-lg p-4"><p class="text-xs font-bold text-slate-400 mb-1">${k.label}</p><p class="text-xs text-slate-400">N/A</p></div>`
+                : `<div class="bg-white border border-slate-200 rounded-lg p-4"><p class="text-xs font-bold text-slate-400 mb-1">${k.label}</p><p class="text-xl font-bold text-slate-800">${fmt(k.value, 0)} <span class="text-xs font-normal text-slate-500">${k.unit||''}</span></p></div>`).join('');
+
+            // Chart update
+            const step = 0.5, labels = [], target = [];
+            for (let h = 0; h <= b.durationHours; h += step) { labels.push(h + 'h'); target.push(Math.round(b.breakEven * h / b.durationHours)); }
+            businessChart.data.labels = labels;
+            businessChart.data.datasets[0].data = target;
+            businessChart.data.datasets[1].data = b.curve.map(p => ({ x: Math.round(p.h / step), y: p.total }));
+            businessChart.update('none');
+
+            document.getElementById('carbonValue').innerText = eventData.carbon.perVisitor.toFixed(2);
+            carbonChart.data.datasets[0].data = [eventData.travelModes.mrt, eventData.travelModes.bus, eventData.travelModes.car];
+            carbonChart.update();
+        }
+
+        // ==========================================
+        // INITIALIZATION & SIMULATION LOOP
+        // ==========================================
+        function initApp() {
+            // Load types into dropdown
+            const types = Object.entries(TEMPLATES).map(([type, t]) => ({ type, name: t.name }));
+            document.getElementById('cfgType').innerHTML = types.map(t => `<option value="${t.type}">${t.name}</option>`).join('');
+            
+            // Set initial event type
+            eventConfig = loadTemplate('green');
+            document.getElementById('cfgType').value = 'green';
+            updateUI();
+
+            // Simulation loop
+            setInterval(() => {
+                const h = (simNow() - startedAt) / 3600000;
+                const curve = 0.4 + Math.sin(Math.min(h / eventConfig.durationHours, 1) * Math.PI);
+                const newVisitors = Math.round((30 + Math.random() * 40) * curve);
+                
+                eventData.totalVisitors += newVisitors;
+                history.push({ t: simNow(), total: eventData.totalVisitors });
+                if (history.length > 500) history.shift();
+
+                eventData.carbon.perVisitor = parseFloat((0.30 + (Math.random()*0.02 - 0.01)).toFixed(2));
+                eventData.travelModes.mrt = 55 + Math.floor(Math.random() * 10);
+                eventData.travelModes.bus = 20 + Math.floor(Math.random() * 10);
+                eventData.travelModes.car = 100 - eventData.travelModes.mrt - eventData.travelModes.bus;
+
+                updateUI();
+            }, 2000); // update every 2 seconds
+        }
+
+        // Handle Dropdown Change
+        function changeType(type) {
+            eventConfig = loadTemplate(type);
+            showToast(`Loaded layout for: ${TEMPLATES[type].name}`);
+            updateUI();
+        }
+
+        window.onload = initApp;
     </script>
 </body>
 </html>
