@@ -42,16 +42,15 @@
                     <button onclick="closeModal()" class="text-slate-400 hover:text-blue-600 text-xl transition-colors">&times;</button>
                 </div>
                 <p class="text-xs text-slate-500 mb-4">Strictly for IT setup. Raw video is processed on the edge server and instantly anonymized.</p>
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div class="bg-slate-50 border border-slate-200 h-32 rounded-lg flex flex-col items-center justify-center relative shadow-inner">
-                        <span class="absolute top-2 right-2 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>
-                        <span class="text-slate-600 text-sm mb-1 font-medium">Cam 1: Expo Hall</span>
-                        <span class="text-emerald-600 text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100">Status: Counting</span>
+                <!-- Cam 1: Expo Hall (live monitor) -->
+                <div class="bg-slate-50 border border-slate-200 rounded-lg relative shadow-inner mb-4 overflow-hidden">
+                    <div class="flex justify-between items-center px-3 py-2 border-b border-slate-200 bg-white">
+                        <span class="text-slate-600 text-sm font-medium">Cam 1: Expo Hall</span>
+                        <span id="camStatus" class="text-slate-500 text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200">Status: Checking...</span>
                     </div>
-                    <div class="bg-slate-50 border border-slate-200 h-32 rounded-lg flex flex-col items-center justify-center relative shadow-inner">
-                        <span class="absolute top-2 right-2 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>
-                        <span class="text-slate-600 text-sm mb-1 font-medium">Cam 2: MRT Link</span>
-                        <span class="text-emerald-600 text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100">Status: Mode Detect</span>
+                    <div class="h-[420px] bg-slate-900 flex items-center justify-center">
+                        <img id="camFeed" alt="Cam 1 live feed" class="max-h-full max-w-full object-contain hidden">
+                        <span id="camPlaceholder" class="text-slate-400 text-sm">No signal: start the vision counter with --frame-url</span>
                     </div>
                 </div>
                 <div class="flex justify-end mt-6">
@@ -417,8 +416,44 @@
             }, 3000);
         }
 
-        function openModal() { document.getElementById('statusModal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('statusModal').classList.add('hidden'); }
+        // Live monitor: the stream only runs while the modal is open, to save bandwidth
+        let camTimer;
+        function openModal() {
+            document.getElementById('statusModal').classList.remove('hidden');
+            updateCamStatus();
+            camTimer = setInterval(updateCamStatus, 2000);
+        }
+        function closeModal() {
+            document.getElementById('statusModal').classList.add('hidden');
+            clearInterval(camTimer);
+            const feed = document.getElementById('camFeed');
+            feed.removeAttribute('src');
+            feed.classList.add('hidden');
+            document.getElementById('camPlaceholder').classList.remove('hidden');
+        }
+        async function updateCamStatus() {
+            const status = document.getElementById('camStatus');
+            const feed = document.getElementById('camFeed');
+            const placeholder = document.getElementById('camPlaceholder');
+            let online = false;
+            try {
+                online = (await (await fetch('http://localhost:3000/api/camera')).json()).online;
+            } catch (e) { /* backend offline */ }
+
+            if (online) {
+                status.className = 'text-emerald-600 text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100';
+                status.innerText = 'Status: Counting';
+                if (!feed.getAttribute('src')) feed.src = 'http://localhost:3000/api/stream';
+                feed.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            } else {
+                status.className = 'text-slate-500 text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200';
+                status.innerText = 'Status: Offline';
+                feed.removeAttribute('src');
+                feed.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+            }
+        }
 
         const businessChart = new Chart(document.getElementById('businessChart'), {
             type: 'line',

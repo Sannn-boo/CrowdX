@@ -1,0 +1,10 @@
+# ByteTrack tuned for dense, high-angle mall CCTV.
+# Defaults created many short-lived IDs (144 IDs for ~35 people on the sample),
+# which inflates any "count new IDs" approach.
+tracker_type: bytetrack
+track_high_thresh: 0.3
+track_low_thresh: 0.1
+new_track_thresh: 0.5   # only confident detections may start a new ID
+track_buffer: 90        # keep lost tracks ~3 s at 30 fps so occluded people keep their ID
+match_thresh: 0.8
+fuse_score: True
