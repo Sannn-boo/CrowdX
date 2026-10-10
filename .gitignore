@@ -1,5 +1,4 @@
 node_modules/
 backend/vision/output/
-backend/vision/samples/
 *.pt
 __pycache__/
