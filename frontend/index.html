@@ -42,23 +42,18 @@
                     <button onclick="closeModal()" class="text-slate-400 hover:text-blue-600 text-xl transition-colors">&times;</button>
                 </div>
                 <p class="text-xs text-slate-500 mb-4">Strictly for IT setup. Raw video is processed on the edge server and instantly anonymized.</p>
-                <!-- Cam 1: Expo Hall (Local Video UI Mode) -->
+                <!-- Cam 1: Expo Hall: ภาพสดจาก AI ถ้าออนไลน์ ไม่งั้นเล่นวิดีโอตัวอย่างแทน -->
                 <div class="bg-slate-50 border border-slate-200 rounded-lg relative shadow-inner mb-4 overflow-hidden">
                     <div class="flex justify-between items-center px-3 py-2 border-b border-slate-200 bg-white">
                         <span class="text-slate-600 text-sm font-medium">Cam 1: Expo Hall</span>
-                        <span id="camStatus" class="text-emerald-600 text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100">Status: Local Sample UI</span>
+                        <span id="camStatus" class="text-slate-500 text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200">Status: Checking...</span>
                     </div>
                     <div class="h-[420px] bg-slate-900 flex items-center justify-center relative overflow-hidden">
-                        <!-- เล่นวิดีโอจากเครื่องแทนการดึง API -->
-                        <video src="/samples/Sample01.mp4" class="w-full h-full object-cover opacity-80" autoplay loop muted playsinline></video>
-                        
-                        <!-- UI กรอบ AI จำลอง -->
-                        <div class="absolute top-1/3 left-1/4 w-12 h-24 border-2 border-green-400 rounded-sm">
-                            <span class="absolute -top-4 left-0 bg-green-400 text-white text-[8px] px-1 font-bold">ID:45 V</span>
-                        </div>
-                        <div class="absolute top-1/2 left-1/2 w-16 h-32 border-2 border-green-400 rounded-sm">
-                            <span class="absolute -top-4 left-0 bg-green-400 text-white text-[8px] px-1 font-bold">ID:46 V</span>
-                        </div>
+                        <!-- ภาพสด (MJPEG) พร้อมกรอบตรวจจับจริงจาก count.py -->
+                        <img id="camStream" alt="Live AI feed" class="w-full h-full object-contain hidden">
+                        <!-- สำรอง: วิดีโอดิบ ไม่มีกรอบ AI (ไม่ใส่กรอบปลอม) -->
+                        <video id="camFallback" src="/samples/Sample01.mp4" class="w-full h-full object-contain opacity-80" loop muted playsinline></video>
+                        <span id="camFallbackNote" class="absolute bottom-2 left-2 bg-slate-800/80 text-slate-200 text-[10px] px-2 py-1 rounded">AI offline: raw sample preview, no detection</span>
                     </div>
                 </div>
                 <div class="flex justify-end mt-6">
@@ -518,14 +513,48 @@
             }, 3000);
         }
 
-        // Live monitor: แก้ไขให้แสดงผล Video จำลองโดยไม่ต้องพึ่ง Backend API
+        // Live monitor: ถ้า AI ส่งภาพมา (/api/camera online) แสดงภาพสด ไม่งั้นเล่นวิดีโอตัวอย่างแทน วิดีโอจึงไม่หาย
+        let camTimer = null;
+        let camLive = null;
+        function setCamStatus(text, cls) {
+            const el = document.getElementById('camStatus');
+            el.innerText = 'Status: ' + text;
+            el.className = 'text-xs px-2 py-1 rounded border ' + cls;
+        }
+        async function updateCamStatus() {
+            let online = false;
+            try {
+                online = (await (await fetch(API + '/api/camera')).json()).online;
+            } catch (e) { /* backend ปิดอยู่: ถือว่าออฟไลน์ */ }
+            if (online === camLive) return;
+            camLive = online;
+            const img = document.getElementById('camStream');
+            const video = document.getElementById('camFallback');
+            img.classList.toggle('hidden', !online);
+            video.classList.toggle('hidden', online);
+            document.getElementById('camFallbackNote').classList.toggle('hidden', online);
+            if (online) {
+                img.src = API + '/api/stream?t=' + Date.now();
+                video.pause();
+                setCamStatus('Counting', 'text-emerald-600 bg-emerald-50 border-emerald-100');
+            } else {
+                img.removeAttribute('src');  // ปิดการเชื่อมต่อสตรีมเดิม
+                video.play().catch(() => {});
+                setCamStatus('Offline (Sample Preview)', 'text-amber-600 bg-amber-50 border-amber-200');
+            }
+        }
         function openModal() {
             document.getElementById('statusModal').classList.remove('hidden');
+            camLive = null;
+            updateCamStatus();
+            camTimer = setInterval(updateCamStatus, 2000);
         }
         function closeModal() {
             document.getElementById('statusModal').classList.add('hidden');
+            clearInterval(camTimer);
+            document.getElementById('camStream').removeAttribute('src');
+            document.getElementById('camFallback').pause();
         }
-        // ลบฟังก์ชัน updateCamStatus() แบบเก่าที่ยิงหา backend ทิ้งไป เพื่อไม่ให้วิดีโอหาย
 
         // กราฟยอดคนสะสมจริง เทียบกับเส้นจุดคุ้มทุน
         const businessChart = new Chart(document.getElementById('businessChart'), {
