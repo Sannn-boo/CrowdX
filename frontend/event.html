@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrowdX Dashboard - The Mall Theme</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; overflow-x: hidden; }
+        .card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.5rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.05); border-color: #cbd5e1; }
+        
+        #toast { transition: opacity 0.3s ease, transform 0.3s ease; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* ซ่อนส่วนที่ไม่จำเป็นตอนปริ้นต์แบบปกติ */
+        @media print {
+            #main-ui { display: none !important; }
+            #report-template { display: block !important; }
+        }
+    </style>
+</head>
+<body class="p-6 min-h-screen relative">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-white border border-blue-100 text-slate-700 px-4 py-3 rounded-lg shadow-xl opacity-0 pointer-events-none transform translate-y-4 z-50 flex items-center">
+        <span id="toast-message" class="font-medium text-sm">System Notification</span>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MAIN UI (DASHBOARD) -->
+    <!-- ========================================== -->
+    <div id="main-ui">
+        <!-- Modal: System Status -->
+        <div id="statusModal" class="fixed inset-0 bg-slate-900/40 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+            <div class="bg-white border border-blue-100 rounded-xl p-6 w-[600px] shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-slate-800">Vision AI Edge Processing</h2>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-blue-600 text-xl transition-colors">&times;</button>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Strictly for IT setup. Raw video is processed on the edge server and instantly anonymized.</p>
+                <!-- Cam 1: Expo Hall: ภาพสดจาก AI ถ้าออนไลน์ ไม่งั้นเล่นวิดีโอตัวอย่างแทน -->
+                <div class="bg-slate-50 border border-slate-200 rounded-lg relative shadow-inner mb-4 overflow-hidden">
+                    <div class="flex justify-between items-center px-3 py-2 border-b border-slate-200 bg-white">
+                        <span class="text-slate-600 text-sm font-medium">Cam 1: Expo Hall</span>
+                        <span id="camStatus" class="text-slate-500 text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200">Status: Checking...</span>
+                    </div>
+                    <div class="h-[420px] bg-slate-900 flex items-center justify-center relative overflow-hidden">
+                        <!-- ภาพสด (MJPEG) พร้อมกรอบตรวจจับจริงจาก count.py -->
+                        <img id="camStream" alt="Live AI feed" class="w-full h-full object-contain hidden">
+                        <!-- สำรอง: วิดีโอดิบ ไม่มีกรอบ AI (ไม่ใส่กรอบปลอม) -->
+                        <video id="camFallback" src="/samples/Sample01.mp4" class="w-full h-full object-contain opacity-80" loop muted playsinline></video>
+                        <span id="camFallbackNote" class="absolute bottom-2 left-2 bg-slate-800/80 text-slate-200 text-[10px] px-2 py-1 rounded">AI offline: raw sample preview, no detection</span>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button onclick="closeModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">Close Monitor</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navbar -->
+        <nav class="flex justify-between items-center mb-8">
+            <!-- กดโลโก้กลับหน้า Hub (index.html) -->
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center font-bold text-white shadow-sm">CX</div>
+                    <h1 class="text-xl font-bold text-slate-800">CrowdX <span class="text-xs text-slate-500 block font-normal">AI Smart Event & Carbon Tracker</span></h1>
+                </a>
+                <a href="index.html" class="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-600 hover:text-blue-700 hover:bg-blue-50 text-xs font-medium transition-colors shadow-sm">← All Events</a>
+            </div>
+            
+            <!-- Navigation -->
+            <div class="flex space-x-2 text-sm font-medium text-slate-500 bg-white p-1 rounded-full border border-blue-100 shadow-sm" id="nav-menu">
+                <button onclick="switchTab('overview', this)" class="nav-btn bg-blue-50 text-blue-700 font-bold px-4 py-2 rounded-full transition-colors">Overview</button>
+                <button onclick="switchTab('business', this)" class="nav-btn hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-full transition-colors">Business</button>
+                <button onclick="switchTab('carbon', this)" class="nav-btn hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-full transition-colors">Carbon</button>
+            </div>
+
+            <!-- System Controls -->
+            <div class="flex space-x-4">
+                <button onclick="exportFormalReport()" class="px-4 py-2 rounded-full border border-slate-200 bg-white text-slate-600 hover:text-blue-700 hover:bg-blue-50 text-sm font-medium transition-colors shadow-sm">
+                    Export Report
+                </button>
+                <button onclick="openModal()" class="px-4 py-2 rounded-full border border-slate-200 bg-white text-sm flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm text-slate-600 font-medium">
+                    System Status
+                </button>
+                <button class="px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium" id="liveStatusBtn">
+                    <div id="statusDot" class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> 
+                    <span id="statusText">Connecting...</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Header -->
+        <header class="mb-8">
+            <p class="text-xs font-bold text-blue-600 tracking-wider mb-2">EVENT INTELLIGENCE</p>
+            <h2 class="text-3xl font-bold mb-2 text-slate-900" id="page-title">MUICT x The Mall Green Expo 2026</h2>
+            <p class="text-slate-500 text-sm" id="page-subtitle">Dual-engine reporting: commercial performance and verified carbon impact, updated in real-time.</p>
+        </header>
+
+        <!-- Top KPI -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="card relative overflow-hidden">
+                <h3 class="text-xs text-slate-500 font-bold tracking-wider mb-2">TOTAL VERIFIED VISITORS</h3>
+                <div class="text-4xl font-bold mb-2 text-slate-800" id="visitorCount">0</div>
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md border border-emerald-100 font-medium">Live CCTV count</span>
+                    <span class="text-slate-400">zone + dwell, since server start</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- OVERVIEW -->
+        <!-- ========================================== -->
+        <div id="page-overview" class="page-content block fade-in">
+            <div class="grid grid-cols-2 gap-6 mb-6">
+                <!-- Business Engine -->
+                <div class="card flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-blue-700">Business Engine</h3>
+                            <span id="bizStatus" class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">Loading...</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <p class="text-xs font-bold text-slate-400 mb-1">NET VALUE</p>
+                                <p class="text-2xl font-bold text-blue-600"><span id="netValue">–</span> <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-400 mb-1">COST</p>
+                                <p class="text-2xl font-bold text-slate-700"><span id="costValue">–</span> <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
+                            </div>
+                        </div>
+                        <!-- แถบความคืบหน้าสู่จุดคุ้มทุน -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="font-bold text-slate-400">BREAK-EVEN PROGRESS</span>
+                                <span class="text-slate-600 font-medium" id="progressText">–</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div id="progressBar" class="h-full bg-blue-600 rounded-full transition-all" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <canvas id="businessChart" height="150"></canvas>
+                    </div>
+                </div>
+
+                <!-- Carbon Engine -->
+                <div class="card flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-emerald-700">Carbon Engine</h3>
+                            <span class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">ESG Data</span>
+                        </div>
+                        <div class="mb-6">
+                            <p class="text-xs font-bold text-slate-400 mb-1">CARBON PER VISITOR</p>
+                            <div class="flex items-center gap-3">
+                                <p class="text-3xl font-bold text-emerald-600"><span id="carbonValue">0.30</span> <span class="text-lg font-normal text-slate-500">kgCO2e</span></p>
+                                <span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full border border-emerald-200 font-medium">15% below standard</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-center relative">
+                            <div class="w-48 h-48"><canvas id="carbonChart"></canvas></div>
+                            <div class="absolute right-0 flex flex-col gap-3 text-sm text-slate-600 font-medium">
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> MRT/BTS</div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-400"></span> Bus</div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-400"></span> Car</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spillover -->
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="font-bold mb-1 text-slate-800">Spillover Lift Analysis</h3>
+                        <p class="text-xs text-slate-500">Incremental traffic pushed from the expo hall into adjacent mall zones</p>
+                    </div>
+                    <span class="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-bold shadow-sm">Net mall lift +10.4%</span>
+                </div>
+                <div class="grid grid-cols-5 gap-4 mt-6 text-center">
+                    <div class="border-t-[3px] border-emerald-500 pt-3"><p class="text-xs text-slate-500 mb-1">Food Court</p><p class="text-2xl font-bold text-emerald-600">+21.7%</p></div>
+                    <div class="border-t-[3px] border-blue-400 pt-3"><p class="text-xs text-slate-500 mb-1">Fashion Zone</p><p class="text-2xl font-bold text-blue-600">+5.2%</p></div>
+                    <div class="border-t-[3px] border-blue-500 pt-3"><p class="text-xs text-slate-500 mb-1">Electronics</p><p class="text-2xl font-bold text-blue-600">+9.4%</p></div>
+                    <div class="border-t-[3px] border-slate-300 pt-3"><p class="text-xs text-slate-500 mb-1">Cinema</p><p class="text-2xl font-bold text-slate-500">+3.1%</p></div>
+                    <div class="border-t-[3px] border-emerald-400 pt-3"><p class="text-xs text-slate-500 mb-1">Supermarket</p><p class="text-2xl font-bold text-emerald-500">+12.8%</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- BUSINESS DETAILED -->
+        <!-- ========================================== -->
+        <div id="page-business" class="page-content hidden fade-in">
+            <div class="card mb-6">
+                <h3 class="font-bold text-blue-700 mb-4 text-xl">Detailed Commercial Performance</h3>
+                <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg text-sm text-slate-700 mb-6 flex justify-between items-center gap-4">
+                    <span><span class="text-blue-700 font-bold">Live Insight:</span> <span id="insightText">Loading...</span></span>
+                    <span class="font-bold text-slate-900 text-right" id="insightTime"></span>
+                </div>
+
+                <!-- ตัวชี้วัดจุดคุ้มทุน (Framework ข้อ 8) -->
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">BREAK-EVEN ATTENDANCE</p>
+                        <p class="text-2xl font-bold text-slate-800" id="kpiBreakEven">–</p>
+                        <p class="text-xs text-slate-400">FC ÷ (R − VC), rounded up</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">CURRENT VISITORS</p>
+                        <p class="text-2xl font-bold text-slate-800" id="kpiVisitors">–</p>
+                        <p class="text-xs text-slate-400">Counted by CCTV</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">BREAK-EVEN PROGRESS</p>
+                        <p class="text-2xl font-bold text-blue-600" id="kpiProgress">–</p>
+                        <p class="text-xs text-slate-400">Current ÷ break-even</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">PROJECTED END-OF-EVENT VISITORS</p>
+                        <p class="text-2xl font-bold text-slate-800" id="kpiProjected">–</p>
+                        <p class="text-xs text-slate-400" id="kpiRate">Pace from the last 10 minutes</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">STATUS</p>
+                        <p class="text-2xl font-bold text-slate-800" id="kpiStatus">–</p>
+                        <p class="text-xs text-slate-400" id="kpiStatusRule">On Track / At Risk / Surplus</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">PROJECTED PROFIT / LOSS</p>
+                        <p class="text-2xl font-bold text-slate-800" id="kpiProfit">–</p>
+                        <p class="text-xs text-slate-400">(R − VC) × projected − FC</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">REVENUE PER ATTENDEE (R)</p>
+                        <p class="text-2xl font-bold text-slate-800"><span id="kpiRevenue">–</span> <span class="text-sm font-normal text-slate-500">THB</span></p>
+                        <p class="text-xs text-slate-400">Total revenue ÷ expected visitors</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">COST PER ATTENDEE</p>
+                        <p class="text-2xl font-bold text-slate-800"><span id="kpiCost">–</span> <span class="text-sm font-normal text-slate-500">THB</span></p>
+                        <p class="text-xs text-slate-400">(FC + VC × visitors) ÷ visitors</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">SPONSORSHIP PER ATTENDEE</p>
+                        <p class="text-2xl font-bold text-slate-800"><span id="kpiSponsor">–</span> <span class="text-sm font-normal text-slate-500">THB</span></p>
+                        <p class="text-xs text-slate-400">Sponsorship ÷ visitors</p>
+                    </div>
+                </div>
+
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="text-xs text-slate-400 bg-slate-50 border-b border-slate-200">
+                        <tr><th class="p-3">Cost Component</th><th class="p-3">Budget Allocation</th><th class="p-3">Cost per Visitor (Current)</th></tr>
+                    </thead>
+                    <tbody id="costTableBody"></tbody>
+                    <tfoot class="bg-slate-50 font-bold text-blue-700 border-t border-slate-200" id="costTableFoot"></tfoot>
+                </table>
+            </div>
+
+            <!-- ฟอร์มตั้งค่างาน: ฝั่ง The Mall และฝั่งผู้จัดงาน (จำนวนคนมาจากกล้อง) -->
+            <div class="card" id="eventSetup">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="font-bold text-blue-700 text-xl">Event Setup</h3>
+                        <p class="text-xs text-slate-500">Costs and revenue from The Mall and the event organizer. Visitor count comes from CCTV.</p>
+                    </div>
+                    <button onclick="saveEvent()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">Save &amp; Recalculate</button>
+                </div>
+                <label class="block text-xs font-bold text-slate-500 mb-6">EVENT TYPE
+                    <select id="eventType" onchange="onEventTypeChange()" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white"></select>
+                </label>
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <h4 class="font-bold text-slate-800 mb-3">The Mall</h4>
+                        <div id="mallFields"></div>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <h4 class="font-bold text-slate-800 mb-3">Event Organizer</h4>
+                        <div id="organizerFields"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-4">
+                    <label class="block text-xs text-slate-500">Expected visitors
+                        <input id="expectedVisitors" type="number" min="1" step="1" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                    </label>
+                    <label class="block text-xs text-slate-500">Event start
+                        <input id="startTime" type="datetime-local" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                    </label>
+                    <label class="block text-xs text-slate-500">Event end
+                        <input id="endTime" type="datetime-local" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                    </label>
+                    <label class="block text-xs text-slate-500">Surplus threshold (% above break-even)
+                        <input id="surplusPct" type="number" min="0" step="any" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- CARBON DETAILED -->
+        <!-- ========================================== -->
+        <div id="page-carbon" class="page-content hidden fade-in">
+            <div class="grid grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="font-bold text-emerald-700 mb-4 text-xl">GHG Emissions Breakdown</h3>
+                    <p class="text-sm text-slate-500 mb-6">Following TGO & GHG Protocol Standards</p>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 border border-slate-100 rounded-lg bg-slate-50">
+                            <div><p class="font-bold text-slate-700">Scope 2: Electricity</p><p class="text-xs text-slate-400">Area-based MVP estimation</p></div>
+                            <p class="font-bold text-emerald-600">1,662 kgCO2e</p>
+                        </div>
+                        <div class="flex justify-between items-center p-3 border border-slate-100 rounded-lg bg-slate-50">
+                            <div><p class="font-bold text-slate-700">Scope 3: Waste (Landfill)</p><p class="text-xs text-slate-400">Average waste generation</p></div>
+                            <p class="font-bold text-emerald-600">348 kgCO2e</p>
+                        </div>
+                        <div class="flex justify-between items-center p-3 border border-emerald-100 rounded-lg bg-emerald-50">
+                            <div><p class="font-bold text-emerald-700">Scope 3: Verified Travel</p><p class="text-xs text-emerald-500">Live AI Vision Detection</p></div>
+                            <p class="font-bold text-emerald-600">525 kgCO2e</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card flex flex-col justify-center items-center text-center bg-gradient-to-b from-white to-emerald-50/30">
+                    <h3 class="text-2xl font-bold text-emerald-700 mb-2">Green Event Eligible</h3>
+                    <p class="text-slate-500 text-sm px-6">With a current carbon footprint 15% below standard, this event is on track to receive The Mall Group's Green Event Certification.</p>
+                </div>
+            </div>
+        </div>
+    </div> <!-- End of MAIN UI -->
+
+    <!-- ========================================== -->
+    <!-- HIDDEN REPORT TEMPLATE (For PDF Export) -->
+    <!-- ========================================== -->
+    <div id="report-template" class="hidden bg-white p-10 max-w-4xl mx-auto text-slate-800">
+        <!-- Report Header -->
+        <div class="border-b-2 border-blue-800 pb-6 mb-8 flex justify-between items-end">
+            <div>
+                <p class="text-sm font-bold text-slate-500 tracking-widest uppercase mb-1">Executive Summary Report</p>
+                <h1 class="text-3xl font-extrabold text-blue-900">MUICT x The Mall Green Expo 2026</h1>
+                <p class="text-slate-600 mt-2">Post-Event Analytics and ESG Performance Document</p>
+            </div>
+            <div class="text-right">
+                <div class="w-12 h-12 bg-blue-800 rounded flex items-center justify-center font-bold text-white mb-2 ml-auto">CX</div>
+                <p class="text-xs text-slate-500 font-medium">Generated via CrowdX System</p>
+                <p class="text-xs text-slate-500" id="rep-time">DD/MM/YYYY HH:MM</p>
+            </div>
+        </div>
+
+        <!-- Section 1: Executive Summary -->
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-blue-800 mb-3 border-l-4 border-blue-600 pl-3">1. Executive Overview</h2>
+            <p class="text-sm text-slate-700 leading-relaxed">
+                This report provides a verified analysis of the event's overall performance. Data has been acquired utilizing CrowdX Edge AI integration, ensuring precise visitor counting while maintaining strict compliance with the Personal Data Protection Act (PDPA). The metrics below encompass both commercial viability and environmental impact.
+            </p>
+        </div>
+
+        <!-- Section 2: Core Metrics & Business -->
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-blue-800 mb-3 border-l-4 border-blue-600 pl-3">2. Commercial Performance Metrics</h2>
+            <div class="grid grid-cols-3 gap-4 mb-4">
+                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Total Verified Visitors</p>
+                    <p class="text-2xl font-bold text-blue-900" id="rep-visitors">0</p>
+                </div>
+                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Net Value per Pax</p>
+                    <p class="text-2xl font-bold text-blue-900"><span id="rep-net">–</span> THB</p>
+                </div>
+                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Estimated Cost per Pax</p>
+                    <p class="text-2xl font-bold text-slate-700"><span id="rep-cost">–</span> THB</p>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 italic">* Note: Baseline cost calculations include marketing, venue setup, and operational operations.</p>
+        </div>
+
+        <!-- Section 3: ESG Impact -->
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-blue-800 mb-3 border-l-4 border-emerald-500 pl-3">3. Environmental, Social, and Governance (ESG) Impact</h2>
+            <p class="text-sm text-slate-700 leading-relaxed mb-4">
+                Carbon emission computations are aligned with the Thailand Greenhouse Gas Management Organization (TGO) standards. Transportation modes are classified via visual detection algorithms.
+            </p>
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <table class="w-full text-sm text-left border-collapse border border-slate-300">
+                        <thead class="bg-slate-100">
+                            <tr>
+                                <th class="border border-slate-300 p-2 text-slate-700">Metric Description</th>
+                                <th class="border border-slate-300 p-2 text-slate-700">Current Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="border border-slate-300 p-2">Average Carbon per Visitor</td>
+                                <td class="border border-slate-300 p-2 font-bold text-emerald-700"><span id="rep-carbon">0.00</span> kgCO2e</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-slate-300 p-2">Scope 2: Electricity Estimation</td>
+                                <td class="border border-slate-300 p-2">1,662 kgCO2e</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-slate-300 p-2">Scope 3: Verified Travel</td>
+                                <td class="border border-slate-300 p-2">525 kgCO2e</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 p-4 rounded flex flex-col justify-center">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-2">Visitor Transportation Breakdown</p>
+                    <div class="space-y-2 text-sm text-slate-700 font-medium">
+                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Mass Transit (MRT/BTS):</span> <span id="rep-mrt">0%</span></div>
+                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Public Bus:</span> <span id="rep-bus">0%</span></div>
+                        <div class="flex justify-between"><span>Personal Vehicle:</span> <span id="rep-car">0%</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded text-sm text-emerald-800 font-medium">
+                Status: Eligible for The Mall Group Green Event Certification (Currently operating 15% below standard emission baselines).
+            </div>
+        </div>
+
+        <!-- Section 4: Compliance -->
+        <div class="mt-12 pt-6 border-t border-slate-200">
+            <h2 class="text-sm font-bold text-slate-800 mb-2">System Integrity and Compliance Statement</h2>
+            <p class="text-xs text-slate-500 text-justify">
+                This report is automatically generated by the CrowdX Analytics Engine. All physical visitor data has been processed exclusively on local edge servers without the retention of Personally Identifiable Information (PII) or facial records. The implementation strictly adheres to the Personal Data Protection Act (PDPA) regulations mandated in the Kingdom of Thailand.
+            </p>
+        </div>
+    </div> <!-- End of REPORT TEMPLATE -->
+
+    <!-- Scripts -->
+    <script>
+        function switchTab(targetPageId, btnElement) {
+            const navBtns = document.querySelectorAll('.nav-btn');
+            navBtns.forEach(b => {
+                b.classList.remove('bg-blue-50', 'text-blue-700', 'font-bold');
+                b.classList.add('hover:text-blue-700', 'hover:bg-blue-50');
+            });
+            btnElement.classList.remove('hover:text-blue-700', 'hover:bg-blue-50');
+            btnElement.classList.add('bg-blue-50', 'text-blue-700', 'font-bold');
+
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(p => {
+                p.classList.remove('block');
+                p.classList.add('hidden');
+            });
+
+            const targetPage = document.getElementById('page-' + targetPageId);
+            targetPage.classList.remove('hidden');
+            targetPage.classList.add('block');
+        }
+
+        // Exportformal report 
+        function exportFormalReport() {
+            showToast('Preparing Executive Summary Report...');
+            
+            // Report Real-time
+            document.getElementById('rep-visitors').innerText = document.getElementById('visitorCount').innerText;
+            document.getElementById('rep-carbon').innerText = document.getElementById('carbonValue').innerText;
+            document.getElementById('rep-net').innerText = document.getElementById('netValue').innerText;
+            document.getElementById('rep-cost').innerText = document.getElementById('costValue').innerText;
+
+            const transportData = carbonChart.data.datasets[0].data;
+            document.getElementById('rep-mrt').innerText = transportData[0] + '%';
+            document.getElementById('rep-bus').innerText = transportData[1] + '%';
+            document.getElementById('rep-car').innerText = transportData[2] + '%';
+
+            // Add the real-time timestamp to the report
+            const now = new Date();
+            document.getElementById('rep-time').innerText = now.toLocaleString('en-GB');
+
+            // 2. สลับซ่อนหน้าเว็บหลัก และเปิดหน้าเทมเพลตรายงาน
+            const mainUi = document.getElementById('main-ui');
+            const reportTemplate = document.getElementById('report-template');
+            
+            mainUi.style.display = 'none';
+            reportTemplate.style.display = 'block';
+
+            // 3. ตั้งค่า PDF ให้ออกมาเป็นขนาด A4 แนวตั้ง (Portrait) แบบโปร
+            const opt = {
+                margin: 0, 
+                filename: 'CrowdX_Executive_Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            // 4. สั่งประมวลผล PDF
+            setTimeout(() => {
+                html2pdf().set(opt).from(reportTemplate).save().then(() => {
+                    // 5. เมื่อโหลดเสร็จแล้ว ให้สลับหน้าเว็บหลักกลับมาเหมือนเดิม
+                    reportTemplate.style.display = 'none';
+                    mainUi.style.display = 'block';
+                    showToast('Executive Report downloaded successfully.');
+                });
+            }, 100); 
+        }
+
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Live monitor: ถ้า AI ส่งภาพมา (/api/camera online) แสดงภาพสด ไม่งั้นเล่นวิดีโอตัวอย่างแทน วิดีโอจึงไม่หาย
+        let camTimer = null;
+        let camLive = null;
+        function setCamStatus(text, cls) {
+            const el = document.getElementById('camStatus');
+            el.innerText = 'Status: ' + text;
+            el.className = 'text-xs px-2 py-1 rounded border ' + cls;
+        }
+        async function updateCamStatus() {
+            let online = false;
+            try {
+                online = (await (await fetch(API + '/api/camera')).json()).online;
+            } catch (e) { /* backend ปิดอยู่: ถือว่าออฟไลน์ */ }
+            if (online === camLive) return;
+            camLive = online;
+            const img = document.getElementById('camStream');
+            const video = document.getElementById('camFallback');
+            img.classList.toggle('hidden', !online);
+            video.classList.toggle('hidden', online);
+            document.getElementById('camFallbackNote').classList.toggle('hidden', online);
+            if (online) {
+                img.src = API + '/api/stream?t=' + Date.now();
+                video.pause();
+                setCamStatus('Counting', 'text-emerald-600 bg-emerald-50 border-emerald-100');
+            } else {
+                img.removeAttribute('src');  // ปิดการเชื่อมต่อสตรีมเดิม
+                video.play().catch(() => {});
+                setCamStatus('Offline (Sample Preview)', 'text-amber-600 bg-amber-50 border-amber-200');
+            }
+        }
+        function openModal() {
+            document.getElementById('statusModal').classList.remove('hidden');
+            camLive = null;
+            updateCamStatus();
+            camTimer = setInterval(updateCamStatus, 2000);
+        }
+        function closeModal() {
+            document.getElementById('statusModal').classList.add('hidden');
+            clearInterval(camTimer);
+            document.getElementById('camStream').removeAttribute('src');
+            document.getElementById('camFallback').pause();
+        }
+
+        // กราฟยอดคนสะสมจริง เทียบกับเส้นจุดคุ้มทุน
+        const businessChart = new Chart(document.getElementById('businessChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Break-even', data: [], borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0.1, pointRadius: 0 },
+                    { label: 'Actual Visitors', data: [], borderColor: '#2563eb', tension: 0.3, pointRadius: 2, pointBackgroundColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true }
+                ]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+        });
+
+        // ===== Business Engine: ฟอร์ม Event Setup + แสดงผลจุดคุ้มทุน =====
+        const API = 'http://localhost:3000';
+        let templates = null;
+        let savedConfig = null; // ค่าที่บันทึกแล้วใน backend
+        let draft = null;       // ค่าในฟอร์มที่กำลังแก้ (เก็บค่าทุกประเภทงานไว้ สลับประเภทแล้วไม่หาย)
+
+        const fmtInt = n => n === null ? '–' : Math.round(n).toLocaleString();
+        const fmtTHB = n => n === null ? '–' : n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        function fmtDuration(min) {
+            if (min < 1) return '< 1 min';
+            if (min < 60) return Math.round(min) + ' min';
+            return Math.floor(min / 60) + ' h ' + Math.round(min % 60) + ' min';
+        }
+
+        // แปลงเวลา (ms) เป็นค่าของช่อง datetime-local ตามเวลาเครื่อง
+        function toLocalInput(ms) {
+            const d = new Date(ms);
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            return d.toISOString().slice(0, 16);
+        }
+
+        function fieldSection(title, fields, group, unit) {
+            if (!fields.length) return '';
+            return `<p class="text-xs font-bold text-slate-400 mt-2 mb-2">${title.toUpperCase()}</p>` + fields.map(f => `
+                <label class="block text-xs text-slate-500 mb-3">${f.label} <span class="text-slate-400">(${unit})</span>
+                    <input type="number" min="0" step="any" data-group="${group}" data-key="${f.key}" value="${draft[group][f.key] ?? 0}"
+                        class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                </label>`).join('');
+        }
+
+        function renderSetupForm() {
+            const type = templates.eventTypes[draft.type];
+            const revenue = type.revenue.map(k => ({ key: k, ...templates.revenue[k] }));
+            const variable = type.variable.map(k => ({ key: k, ...templates.variableCost[k] }));
+            const isMall = f => f.party === 'mall';
+
+            document.getElementById('eventType').value = draft.type;
+            document.getElementById('mallFields').innerHTML =
+                fieldSection('Fixed costs', templates.fixedCost.filter(isMall), 'fixedCost', 'THB') +
+                fieldSection('Revenue', revenue.filter(isMall), 'revenue', 'THB');
+            document.getElementById('organizerFields').innerHTML =
+                fieldSection('Fixed costs', templates.fixedCost.filter(f => !isMall(f)), 'fixedCost', 'THB') +
+                fieldSection('Revenue', revenue.filter(f => !isMall(f)), 'revenue', 'THB') +
+                fieldSection('Variable costs', variable, 'variableCost', 'THB per visitor');
+            document.getElementById('expectedVisitors').value = draft.expectedVisitors;
+            document.getElementById('startTime').value = toLocalInput(draft.startTime);
+            document.getElementById('endTime').value = toLocalInput(draft.endTime);
+            document.getElementById('surplusPct').value = draft.surplusPct;
+        }
+
+        function readForm() {
+            document.querySelectorAll('#eventSetup input[data-group]').forEach(i => {
+                draft[i.dataset.group][i.dataset.key] = parseFloat(i.value) || 0;
+            });
+            draft.expectedVisitors = parseFloat(document.getElementById('expectedVisitors').value);
+            draft.startTime = new Date(document.getElementById('startTime').value).getTime();
+            draft.endTime = new Date(document.getElementById('endTime').value).getTime();
+            draft.surplusPct = parseFloat(document.getElementById('surplusPct').value);
+        }
+
+        function onEventTypeChange() {
+            readForm();
+            draft.type = document.getElementById('eventType').value;
+            renderSetupForm();
+        }
+
+        async function loadEvent() {
+            const d = await (await fetch(API + '/api/event')).json();
+            templates = d.templates;
+            savedConfig = d.config;
+            draft = JSON.parse(JSON.stringify(d.config));
+            document.getElementById('eventType').innerHTML = Object.entries(templates.eventTypes)
+                .map(([key, t]) => `<option value="${key}">${t.label}</option>`).join('');
+            renderSetupForm();
+        }
+
+        async function saveEvent() {
+            readForm();
+            try {
+                const res = await fetch(API + '/api/event', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(draft)
+                });
+                const d = await res.json();
+                if (!d.success) return showToast('Cannot save: ' + d.error);
+                savedConfig = d.config;
+                showToast('Event setup saved. Break-even recalculated.');
+                refreshData();
+            } catch (error) {
+                showToast('Cannot save: backend is offline.');
+            }
+        }
+
+        const STATUS_STYLES = {
+            'At Risk': 'bg-red-50 text-red-600 border-red-200',
+            'On Track': 'bg-blue-50 text-blue-700 border-blue-200',
+            'Surplus': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            'No Break-even': 'bg-slate-100 text-slate-600 border-slate-200',
+            'Collecting data': 'bg-slate-100 text-slate-500 border-slate-200'
+        };
+
+        function renderBusiness(b, history) {
+            document.getElementById('bizStatus').innerText = b.status;
+            document.getElementById('bizStatus').className = 'text-xs px-2 py-1 rounded-md font-bold border ' + STATUS_STYLES[b.status];
+            document.getElementById('netValue').innerText = fmtTHB(b.netValuePerAttendee);
+            document.getElementById('costValue').innerText = fmtTHB(b.costPerAttendee);
+            document.getElementById('progressText').innerText = b.breakEven === null
+                ? 'No break-even' : `${fmtInt(b.visitors)} / ${fmtInt(b.breakEven)} (${b.progressPct.toFixed(1)}%)`;
+            document.getElementById('progressBar').style.width = Math.min(100, b.progressPct || 0) + '%';
+
+            document.getElementById('kpiBreakEven').innerText = fmtInt(b.breakEven);
+            document.getElementById('kpiVisitors').innerText = fmtInt(b.visitors);
+            document.getElementById('kpiProgress').innerText = b.progressPct === null ? '–' : b.progressPct.toFixed(1) + '%';
+            document.getElementById('kpiProjected').innerText = fmtInt(b.projectedVisitors);
+            document.getElementById('kpiRate').innerText = `Pace: ${fmtInt(b.ratePerHour)} visitors/hour (last 10 min)`;
+            document.getElementById('kpiStatus').innerText = b.status;
+            document.getElementById('kpiStatus').className = 'text-2xl font-bold ' + STATUS_STYLES[b.status].split(' ')[1];
+            document.getElementById('kpiStatusRule').innerText = `Surplus = projected ≥ ${100 + savedConfig.surplusPct}% of break-even`;
+            document.getElementById('kpiProfit').innerText = b.projectedProfit === null ? '–'
+                : (b.projectedProfit < 0 ? '−' : '') + fmtTHB(Math.abs(b.projectedProfit)) + ' THB';
+            document.getElementById('kpiProfit').className = 'text-2xl font-bold ' + (b.projectedProfit === null ? 'text-slate-800' : b.projectedProfit < 0 ? 'text-red-600' : 'text-emerald-600');
+            document.getElementById('kpiRevenue').innerText = fmtTHB(b.revenuePerAttendee);
+            document.getElementById('kpiCost').innerText = fmtTHB(b.costPerAttendee);
+            document.getElementById('kpiSponsor').innerText = fmtTHB(b.sponsorshipPerAttendee);
+
+            // Live Insight
+            let insight, time = '';
+            if (b.breakEven === null) {
+                insight = 'Revenue per visitor does not cover the variable cost per visitor, so this event cannot break even.';
+            } else if (b.visitorsNeeded === 0) {
+                insight = `Break-even reached. Each extra visitor adds ${fmtTHB(b.revenuePerAttendee - b.variableCostPerAttendee)} THB.`;
+            } else {
+                insight = `We need ${fmtInt(b.visitorsNeeded)} more visitors to reach the break-even target.`;
+                if (b.status === 'Collecting data') time = 'Forecast starts 1 min after the event starts';
+                else if (b.minutesToBreakEven === null) time = 'Estimated time: – (no visitors in the last 10 min)';
+                else if (b.minutesToBreakEven > b.remainingMinutes) time = 'Not before closing at the current pace';
+                else time = 'Estimated time: ' + fmtDuration(b.minutesToBreakEven);
+            }
+            document.getElementById('insightText').innerText = insight;
+            document.getElementById('insightTime').innerText = time;
+
+            // ตารางต้นทุน: FC แต่ละรายการ + VC × จำนวนคน
+            const perVisitor = amount => b.visitors > 0 ? fmtTHB(amount / b.visitors) + ' THB' : '–';
+            const rows = templates.fixedCost
+                .filter(f => savedConfig.fixedCost[f.key] > 0)
+                .map(f => [f.label, savedConfig.fixedCost[f.key], perVisitor(savedConfig.fixedCost[f.key])]);
+            rows.push(['Variable costs (VC × visitors)', b.variableCostPerAttendee * b.visitors, fmtTHB(b.variableCostPerAttendee) + ' THB']);
+            document.getElementById('costTableBody').innerHTML = rows.map(([label, amount, per]) =>
+                `<tr class="border-b border-slate-100"><td class="p-3">${label}</td><td class="p-3 font-medium text-slate-700">${fmtTHB(amount)} THB</td><td class="p-3">${per}</td></tr>`).join('');
+            document.getElementById('costTableFoot').innerHTML =
+                `<tr><td class="p-3">Total Cost So Far</td><td class="p-3">${fmtTHB(b.fixedCost + b.variableCostPerAttendee * b.visitors)} THB</td><td class="p-3">${fmtTHB(b.costPerAttendee)} THB / pax</td></tr>`;
+
+            // กราฟ
+            businessChart.data.labels = history.map(h => new Date(h.t).toLocaleTimeString('en-GB'));
+            businessChart.data.datasets[0].data = history.map(() => b.breakEven);
+            businessChart.data.datasets[1].data = history.map(h => h.n);
+            businessChart.update();
+        }
+
+        const carbonChart = new Chart(document.getElementById('carbonChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['MRT/BTS', 'Bus', 'Personal Car'],
+                datasets: [{ data: [60, 25, 15], backgroundColor: ['#10b981', '#60a5fa', '#fbbf24'], borderWidth: 2, borderColor: '#ffffff', cutout: '75%' }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+
+        async function refreshData() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const liveBtn = document.getElementById('liveStatusBtn');
+
+            try {
+                if (!templates) await loadEvent();
+                const response = await fetch(API + '/api/data');
+                const data = await response.json();
+                
+                statusDot.className = 'w-2 h-2 bg-emerald-500 rounded-full animate-pulse';
+                statusText.innerText = 'Live: Connected';
+                liveBtn.className = 'px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium';
+                
+                const visitorCounter = document.getElementById('visitorCount');
+                const currentDisplay = parseInt(visitorCounter.innerText.replace(/,/g, ''));
+
+                if (currentDisplay !== data.totalVisitors) {
+                    visitorCounter.innerText = data.totalVisitors.toLocaleString();
+                    visitorCounter.classList.add('text-emerald-500');
+                    setTimeout(() => visitorCounter.classList.remove('text-emerald-500'), 600);
+                }
+
+                renderBusiness(data.business, data.history);
+
+                document.getElementById('carbonValue').innerText = data.carbon.perVisitor.toFixed(2);
+                carbonChart.data.datasets[0].data = [data.travelModes.mrt, data.travelModes.bus, data.travelModes.car];
+                carbonChart.update();
+
+            } catch (error) {
+                statusDot.className = 'w-2 h-2 bg-slate-400 rounded-full';
+                statusText.innerText = 'Offline: Check Sensor';
+                liveBtn.className = 'px-4 py-2 rounded-full border border-slate-200 bg-slate-50 text-slate-500 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium';
+            }
+        }
+
+        refreshData();
+        setInterval(refreshData, 3000);
+    </script>
+</body>
+</html>

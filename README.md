@@ -3,7 +3,8 @@
 ```
 CrowdX/
 ├── frontend/
-│   └── index.html            Dashboard (Tailwind + Chart.js)
+│   ├── index.html            Event hub (homepage): all events, links to each dashboard
+│   └── event.html            Event dashboard (Tailwind + Chart.js)
 └── backend/
     ├── server.js             Express API (port 3000), also serves the dashboard
     ├── package.json

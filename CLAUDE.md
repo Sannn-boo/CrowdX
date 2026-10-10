@@ -51,7 +51,7 @@ See README.md for the folder layout, setup, run commands and API.
   forecast uses the last-10-minute pace. The team chose this scope: carbon and spillover come later.
 - **Placeholder data in the dashboard.** `server.js` still **randomizes** carbon per visitor and
   the MRT/Bus/Car split on every update. Spillover %, the scope breakdown and "15% below
-  standard" are hard-coded in `index.html`. The PDF report says transport modes come from "visual detection", which isn't
+  standard" are hard-coded in `event.html`. The PDF report says transport modes come from "visual detection", which isn't
   real: cameras can't tell how someone travelled to the mall. Proposed next step: real Business
   and Carbon engines computed from the live count. Carbon would use cited TGO emission factors
   (never invent factor values), with travel mode from a visitor survey.
@@ -63,6 +63,6 @@ See README.md for the folder layout, setup, run commands and API.
 
 - Before restructuring or changing their existing files, ask first. They originally asked that
   the original files not be disturbed, then explicitly approved the backend/frontend split.
-- Code comments in `server.js` and `index.html` are in Thai. Match that style there.
+- Code comments in `server.js`, `index.html` (hub) and `event.html` (dashboard) are in Thai. Match that style there.
 - Commit only when asked. As of 2026-10-10, the backend/frontend restructure, vision counter and
   live monitor are **not committed yet**.
