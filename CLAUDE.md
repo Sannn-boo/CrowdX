@@ -46,10 +46,12 @@ See README.md for the folder layout, setup, run commands and API.
 
 ## Known gaps / next steps
 
-- **Placeholder data in the dashboard.** `server.js` starts `totalVisitors` at a hard-coded
-  8450 and **randomizes** carbon per visitor and the MRT/Bus/Car split on every update.
-  Business numbers, spillover %, the scope breakdown and "15% below standard" are hard-coded in
-  `index.html`. The PDF report says transport modes come from "visual detection", which isn't
+- **Business Engine is real (break-even only).** Visitor count starts at 0 (camera only). Costs and
+  revenue come from the Event Setup form; R is locked to expected visitors (framework option A);
+  forecast uses the last-10-minute pace. The team chose this scope: carbon and spillover come later.
+- **Placeholder data in the dashboard.** `server.js` still **randomizes** carbon per visitor and
+  the MRT/Bus/Car split on every update. Spillover %, the scope breakdown and "15% below
+  standard" are hard-coded in `index.html`. The PDF report says transport modes come from "visual detection", which isn't
   real: cameras can't tell how someone travelled to the mall. Proposed next step: real Business
   and Carbon engines computed from the live count. Carbon would use cited TGO emission factors
   (never invent factor values), with travel mode from a visitor survey.

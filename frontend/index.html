@@ -50,7 +50,7 @@
                     </div>
                     <div class="h-[420px] bg-slate-900 flex items-center justify-center relative overflow-hidden">
                         <!-- เล่นวิดีโอจากเครื่องแทนการดึง API -->
-                        <video src="../backend/vision/samples/Sample01.mp4" class="w-full h-full object-cover opacity-80" autoplay loop muted playsinline></video>
+                        <video src="/samples/Sample01.mp4" class="w-full h-full object-cover opacity-80" autoplay loop muted playsinline></video>
                         
                         <!-- UI กรอบ AI จำลอง -->
                         <div class="absolute top-1/3 left-1/4 w-12 h-24 border-2 border-green-400 rounded-sm">
@@ -107,10 +107,10 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div class="card relative overflow-hidden">
                 <h3 class="text-xs text-slate-500 font-bold tracking-wider mb-2">TOTAL VERIFIED VISITORS</h3>
-                <div class="text-4xl font-bold mb-2 text-slate-800" id="visitorCount">8,450</div>
+                <div class="text-4xl font-bold mb-2 text-slate-800" id="visitorCount">0</div>
                 <div class="flex items-center gap-2 text-xs">
-                    <span class="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md border border-emerald-100 font-medium">+12% trend</span>
-                    <span class="text-slate-400">vs. previous expo day</span>
+                    <span class="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md border border-emerald-100 font-medium">Live CCTV count</span>
+                    <span class="text-slate-400">zone + dwell, since server start</span>
                 </div>
             </div>
         </div>
@@ -125,16 +125,26 @@
                     <div>
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="font-bold text-blue-700">Business Engine</h3>
-                            <span class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">Commercial Data</span>
+                            <span id="bizStatus" class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">Loading...</span>
                         </div>
                         <div class="grid grid-cols-2 gap-4 mb-6">
                             <div>
                                 <p class="text-xs font-bold text-slate-400 mb-1">NET VALUE</p>
-                                <p class="text-2xl font-bold text-blue-600">45.50 <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
+                                <p class="text-2xl font-bold text-blue-600"><span id="netValue">–</span> <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
                             </div>
                             <div>
                                 <p class="text-xs font-bold text-slate-400 mb-1">COST</p>
-                                <p class="text-2xl font-bold text-slate-700">17.75 <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
+                                <p class="text-2xl font-bold text-slate-700"><span id="costValue">–</span> <span class="text-sm font-normal text-slate-500">THB/pax</span></p>
+                            </div>
+                        </div>
+                        <!-- แถบความคืบหน้าสู่จุดคุ้มทุน -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="font-bold text-slate-400">BREAK-EVEN PROGRESS</span>
+                                <span class="text-slate-600 font-medium" id="progressText">–</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div id="progressBar" class="h-full bg-blue-600 rounded-full transition-all" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
@@ -194,23 +204,105 @@
         <div id="page-business" class="page-content hidden fade-in">
             <div class="card mb-6">
                 <h3 class="font-bold text-blue-700 mb-4 text-xl">Detailed Commercial Performance</h3>
-                <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg text-sm text-slate-700 mb-6 flex justify-between items-center">
-                    <span><span class="text-blue-700 font-bold">Live Insight:</span> We need 1,550 more visitors to reach the break-even target.</span>
-                    <span class="font-bold text-slate-900">Estimated time: 3 hours</span>
+                <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg text-sm text-slate-700 mb-6 flex justify-between items-center gap-4">
+                    <span><span class="text-blue-700 font-bold">Live Insight:</span> <span id="insightText">Loading...</span></span>
+                    <span class="font-bold text-slate-900 text-right" id="insightTime"></span>
                 </div>
+
+                <!-- ตัวชี้วัดจุดคุ้มทุน (Framework ข้อ 8) -->
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">BREAK-EVEN ATTENDANCE</p>
+                        <p class="text-2xl font-bold text-slate-800" id="kpiBreakEven">–</p>
+                        <p class="text-xs text-slate-400">FC ÷ (R − VC), rounded up</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">CURRENT VISITORS</p>
+                        <p class="text-2xl font-bold text-slate-800" id="kpiVisitors">–</p>
+                        <p class="text-xs text-slate-400">Counted by CCTV</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">BREAK-EVEN PROGRESS</p>
+                        <p class="text-2xl font-bold text-blue-600" id="kpiProgress">–</p>
+                        <p class="text-xs text-slate-400">Current ÷ break-even</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">PROJECTED END-OF-EVENT VISITORS</p>
+                        <p class="text-2xl font-bold text-slate-800" id="kpiProjected">–</p>
+                        <p class="text-xs text-slate-400" id="kpiRate">Pace from the last 10 minutes</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">STATUS</p>
+                        <p class="text-2xl font-bold text-slate-800" id="kpiStatus">–</p>
+                        <p class="text-xs text-slate-400" id="kpiStatusRule">On Track / At Risk / Surplus</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">PROJECTED PROFIT / LOSS</p>
+                        <p class="text-2xl font-bold text-slate-800" id="kpiProfit">–</p>
+                        <p class="text-xs text-slate-400">(R − VC) × projected − FC</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">REVENUE PER ATTENDEE (R)</p>
+                        <p class="text-2xl font-bold text-slate-800"><span id="kpiRevenue">–</span> <span class="text-sm font-normal text-slate-500">THB</span></p>
+                        <p class="text-xs text-slate-400">Total revenue ÷ expected visitors</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">COST PER ATTENDEE</p>
+                        <p class="text-2xl font-bold text-slate-800"><span id="kpiCost">–</span> <span class="text-sm font-normal text-slate-500">THB</span></p>
+                        <p class="text-xs text-slate-400">(FC + VC × visitors) ÷ visitors</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-slate-400 mb-1">SPONSORSHIP PER ATTENDEE</p>
+                        <p class="text-2xl font-bold text-slate-800"><span id="kpiSponsor">–</span> <span class="text-sm font-normal text-slate-500">THB</span></p>
+                        <p class="text-xs text-slate-400">Sponsorship ÷ visitors</p>
+                    </div>
+                </div>
+
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="text-xs text-slate-400 bg-slate-50 border-b border-slate-200">
                         <tr><th class="p-3">Cost Component</th><th class="p-3">Budget Allocation</th><th class="p-3">Cost per Visitor (Current)</th></tr>
                     </thead>
-                    <tbody>
-                        <tr class="border-b border-slate-100"><td class="p-3">Marketing & Ads</td><td class="p-3 font-medium text-slate-700">50,000 THB</td><td class="p-3">5.91 THB</td></tr>
-                        <tr class="border-b border-slate-100"><td class="p-3">Venue Setup & Operations</td><td class="p-3 font-medium text-slate-700">75,000 THB</td><td class="p-3">8.87 THB</td></tr>
-                        <tr><td class="p-3">Miscellaneous</td><td class="p-3 font-medium text-slate-700">25,000 THB</td><td class="p-3">2.95 THB</td></tr>
-                    </tbody>
-                    <tfoot class="bg-slate-50 font-bold text-blue-700 border-t border-slate-200">
-                        <tr><td class="p-3">Total Estimated Cost</td><td class="p-3">150,000 THB</td><td class="p-3">17.75 THB / pax</td></tr>
-                    </tfoot>
+                    <tbody id="costTableBody"></tbody>
+                    <tfoot class="bg-slate-50 font-bold text-blue-700 border-t border-slate-200" id="costTableFoot"></tfoot>
                 </table>
+            </div>
+
+            <!-- ฟอร์มตั้งค่างาน: ฝั่ง The Mall และฝั่งผู้จัดงาน (จำนวนคนมาจากกล้อง) -->
+            <div class="card" id="eventSetup">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="font-bold text-blue-700 text-xl">Event Setup</h3>
+                        <p class="text-xs text-slate-500">Costs and revenue from The Mall and the event organizer. Visitor count comes from CCTV.</p>
+                    </div>
+                    <button onclick="saveEvent()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">Save &amp; Recalculate</button>
+                </div>
+                <label class="block text-xs font-bold text-slate-500 mb-6">EVENT TYPE
+                    <select id="eventType" onchange="onEventTypeChange()" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white"></select>
+                </label>
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <h4 class="font-bold text-slate-800 mb-3">The Mall</h4>
+                        <div id="mallFields"></div>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <h4 class="font-bold text-slate-800 mb-3">Event Organizer</h4>
+                        <div id="organizerFields"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-4">
+                    <label class="block text-xs text-slate-500">Expected visitors
+                        <input id="expectedVisitors" type="number" min="1" step="1" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                    </label>
+                    <label class="block text-xs text-slate-500">Event start
+                        <input id="startTime" type="datetime-local" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                    </label>
+                    <label class="block text-xs text-slate-500">Event end
+                        <input id="endTime" type="datetime-local" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                    </label>
+                    <label class="block text-xs text-slate-500">Surplus threshold (% above break-even)
+                        <input id="surplusPct" type="number" min="0" step="any" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -281,11 +373,11 @@
                 </div>
                 <div class="bg-slate-50 p-4 border border-slate-200 rounded">
                     <p class="text-xs font-bold text-slate-500 uppercase mb-1">Net Value per Pax</p>
-                    <p class="text-2xl font-bold text-blue-900">45.50 THB</p>
+                    <p class="text-2xl font-bold text-blue-900"><span id="rep-net">–</span> THB</p>
                 </div>
                 <div class="bg-slate-50 p-4 border border-slate-200 rounded">
                     <p class="text-xs font-bold text-slate-500 uppercase mb-1">Estimated Cost per Pax</p>
-                    <p class="text-2xl font-bold text-slate-700">17.75 THB</p>
+                    <p class="text-2xl font-bold text-slate-700"><span id="rep-cost">–</span> THB</p>
                 </div>
             </div>
             <p class="text-xs text-slate-500 italic">* Note: Baseline cost calculations include marketing, venue setup, and operational operations.</p>
@@ -374,7 +466,9 @@
             // Report Real-time
             document.getElementById('rep-visitors').innerText = document.getElementById('visitorCount').innerText;
             document.getElementById('rep-carbon').innerText = document.getElementById('carbonValue').innerText;
-            
+            document.getElementById('rep-net').innerText = document.getElementById('netValue').innerText;
+            document.getElementById('rep-cost').innerText = document.getElementById('costValue').innerText;
+
             const transportData = carbonChart.data.datasets[0].data;
             document.getElementById('rep-mrt').innerText = transportData[0] + '%';
             document.getElementById('rep-bus').innerText = transportData[1] + '%';
@@ -433,17 +527,179 @@
         }
         // ลบฟังก์ชัน updateCamStatus() แบบเก่าที่ยิงหา backend ทิ้งไป เพื่อไม่ให้วิดีโอหาย
 
+        // กราฟยอดคนสะสมจริง เทียบกับเส้นจุดคุ้มทุน
         const businessChart = new Chart(document.getElementById('businessChart'), {
             type: 'line',
             data: {
-                labels: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'],
+                labels: [],
                 datasets: [
-                    { label: 'Target Baseline', data: [1000, 2000, 3000, 4000, 5000, 6000, 7000], borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0.1, pointRadius: 0 },
-                    { label: 'Actual Visitors', data: [1200, 2500, 4100, 5800, 7200, 8450], borderColor: '#2563eb', tension: 0.3, pointRadius: 4, pointBackgroundColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true }
+                    { label: 'Break-even', data: [], borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0.1, pointRadius: 0 },
+                    { label: 'Actual Visitors', data: [], borderColor: '#2563eb', tension: 0.3, pointRadius: 2, pointBackgroundColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true }
                 ]
             },
-            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
         });
+
+        // ===== Business Engine: ฟอร์ม Event Setup + แสดงผลจุดคุ้มทุน =====
+        const API = 'http://localhost:3000';
+        let templates = null;
+        let savedConfig = null; // ค่าที่บันทึกแล้วใน backend
+        let draft = null;       // ค่าในฟอร์มที่กำลังแก้ (เก็บค่าทุกประเภทงานไว้ สลับประเภทแล้วไม่หาย)
+
+        const fmtInt = n => n === null ? '–' : Math.round(n).toLocaleString();
+        const fmtTHB = n => n === null ? '–' : n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        function fmtDuration(min) {
+            if (min < 1) return '< 1 min';
+            if (min < 60) return Math.round(min) + ' min';
+            return Math.floor(min / 60) + ' h ' + Math.round(min % 60) + ' min';
+        }
+
+        // แปลงเวลา (ms) เป็นค่าของช่อง datetime-local ตามเวลาเครื่อง
+        function toLocalInput(ms) {
+            const d = new Date(ms);
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            return d.toISOString().slice(0, 16);
+        }
+
+        function fieldSection(title, fields, group, unit) {
+            if (!fields.length) return '';
+            return `<p class="text-xs font-bold text-slate-400 mt-2 mb-2">${title.toUpperCase()}</p>` + fields.map(f => `
+                <label class="block text-xs text-slate-500 mb-3">${f.label} <span class="text-slate-400">(${unit})</span>
+                    <input type="number" min="0" step="any" data-group="${group}" data-key="${f.key}" value="${draft[group][f.key] ?? 0}"
+                        class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                </label>`).join('');
+        }
+
+        function renderSetupForm() {
+            const type = templates.eventTypes[draft.type];
+            const revenue = type.revenue.map(k => ({ key: k, ...templates.revenue[k] }));
+            const variable = type.variable.map(k => ({ key: k, ...templates.variableCost[k] }));
+            const isMall = f => f.party === 'mall';
+
+            document.getElementById('eventType').value = draft.type;
+            document.getElementById('mallFields').innerHTML =
+                fieldSection('Fixed costs', templates.fixedCost.filter(isMall), 'fixedCost', 'THB') +
+                fieldSection('Revenue', revenue.filter(isMall), 'revenue', 'THB');
+            document.getElementById('organizerFields').innerHTML =
+                fieldSection('Fixed costs', templates.fixedCost.filter(f => !isMall(f)), 'fixedCost', 'THB') +
+                fieldSection('Revenue', revenue.filter(f => !isMall(f)), 'revenue', 'THB') +
+                fieldSection('Variable costs', variable, 'variableCost', 'THB per visitor');
+            document.getElementById('expectedVisitors').value = draft.expectedVisitors;
+            document.getElementById('startTime').value = toLocalInput(draft.startTime);
+            document.getElementById('endTime').value = toLocalInput(draft.endTime);
+            document.getElementById('surplusPct').value = draft.surplusPct;
+        }
+
+        function readForm() {
+            document.querySelectorAll('#eventSetup input[data-group]').forEach(i => {
+                draft[i.dataset.group][i.dataset.key] = parseFloat(i.value) || 0;
+            });
+            draft.expectedVisitors = parseFloat(document.getElementById('expectedVisitors').value);
+            draft.startTime = new Date(document.getElementById('startTime').value).getTime();
+            draft.endTime = new Date(document.getElementById('endTime').value).getTime();
+            draft.surplusPct = parseFloat(document.getElementById('surplusPct').value);
+        }
+
+        function onEventTypeChange() {
+            readForm();
+            draft.type = document.getElementById('eventType').value;
+            renderSetupForm();
+        }
+
+        async function loadEvent() {
+            const d = await (await fetch(API + '/api/event')).json();
+            templates = d.templates;
+            savedConfig = d.config;
+            draft = JSON.parse(JSON.stringify(d.config));
+            document.getElementById('eventType').innerHTML = Object.entries(templates.eventTypes)
+                .map(([key, t]) => `<option value="${key}">${t.label}</option>`).join('');
+            renderSetupForm();
+        }
+
+        async function saveEvent() {
+            readForm();
+            try {
+                const res = await fetch(API + '/api/event', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(draft)
+                });
+                const d = await res.json();
+                if (!d.success) return showToast('Cannot save: ' + d.error);
+                savedConfig = d.config;
+                showToast('Event setup saved. Break-even recalculated.');
+                refreshData();
+            } catch (error) {
+                showToast('Cannot save: backend is offline.');
+            }
+        }
+
+        const STATUS_STYLES = {
+            'At Risk': 'bg-red-50 text-red-600 border-red-200',
+            'On Track': 'bg-blue-50 text-blue-700 border-blue-200',
+            'Surplus': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            'No Break-even': 'bg-slate-100 text-slate-600 border-slate-200',
+            'Collecting data': 'bg-slate-100 text-slate-500 border-slate-200'
+        };
+
+        function renderBusiness(b, history) {
+            document.getElementById('bizStatus').innerText = b.status;
+            document.getElementById('bizStatus').className = 'text-xs px-2 py-1 rounded-md font-bold border ' + STATUS_STYLES[b.status];
+            document.getElementById('netValue').innerText = fmtTHB(b.netValuePerAttendee);
+            document.getElementById('costValue').innerText = fmtTHB(b.costPerAttendee);
+            document.getElementById('progressText').innerText = b.breakEven === null
+                ? 'No break-even' : `${fmtInt(b.visitors)} / ${fmtInt(b.breakEven)} (${b.progressPct.toFixed(1)}%)`;
+            document.getElementById('progressBar').style.width = Math.min(100, b.progressPct || 0) + '%';
+
+            document.getElementById('kpiBreakEven').innerText = fmtInt(b.breakEven);
+            document.getElementById('kpiVisitors').innerText = fmtInt(b.visitors);
+            document.getElementById('kpiProgress').innerText = b.progressPct === null ? '–' : b.progressPct.toFixed(1) + '%';
+            document.getElementById('kpiProjected').innerText = fmtInt(b.projectedVisitors);
+            document.getElementById('kpiRate').innerText = `Pace: ${fmtInt(b.ratePerHour)} visitors/hour (last 10 min)`;
+            document.getElementById('kpiStatus').innerText = b.status;
+            document.getElementById('kpiStatus').className = 'text-2xl font-bold ' + STATUS_STYLES[b.status].split(' ')[1];
+            document.getElementById('kpiStatusRule').innerText = `Surplus = projected ≥ ${100 + savedConfig.surplusPct}% of break-even`;
+            document.getElementById('kpiProfit').innerText = b.projectedProfit === null ? '–'
+                : (b.projectedProfit < 0 ? '−' : '') + fmtTHB(Math.abs(b.projectedProfit)) + ' THB';
+            document.getElementById('kpiProfit').className = 'text-2xl font-bold ' + (b.projectedProfit === null ? 'text-slate-800' : b.projectedProfit < 0 ? 'text-red-600' : 'text-emerald-600');
+            document.getElementById('kpiRevenue').innerText = fmtTHB(b.revenuePerAttendee);
+            document.getElementById('kpiCost').innerText = fmtTHB(b.costPerAttendee);
+            document.getElementById('kpiSponsor').innerText = fmtTHB(b.sponsorshipPerAttendee);
+
+            // Live Insight
+            let insight, time = '';
+            if (b.breakEven === null) {
+                insight = 'Revenue per visitor does not cover the variable cost per visitor, so this event cannot break even.';
+            } else if (b.visitorsNeeded === 0) {
+                insight = `Break-even reached. Each extra visitor adds ${fmtTHB(b.revenuePerAttendee - b.variableCostPerAttendee)} THB.`;
+            } else {
+                insight = `We need ${fmtInt(b.visitorsNeeded)} more visitors to reach the break-even target.`;
+                if (b.status === 'Collecting data') time = 'Forecast starts 1 min after the event starts';
+                else if (b.minutesToBreakEven === null) time = 'Estimated time: – (no visitors in the last 10 min)';
+                else if (b.minutesToBreakEven > b.remainingMinutes) time = 'Not before closing at the current pace';
+                else time = 'Estimated time: ' + fmtDuration(b.minutesToBreakEven);
+            }
+            document.getElementById('insightText').innerText = insight;
+            document.getElementById('insightTime').innerText = time;
+
+            // ตารางต้นทุน: FC แต่ละรายการ + VC × จำนวนคน
+            const perVisitor = amount => b.visitors > 0 ? fmtTHB(amount / b.visitors) + ' THB' : '–';
+            const rows = templates.fixedCost
+                .filter(f => savedConfig.fixedCost[f.key] > 0)
+                .map(f => [f.label, savedConfig.fixedCost[f.key], perVisitor(savedConfig.fixedCost[f.key])]);
+            rows.push(['Variable costs (VC × visitors)', b.variableCostPerAttendee * b.visitors, fmtTHB(b.variableCostPerAttendee) + ' THB']);
+            document.getElementById('costTableBody').innerHTML = rows.map(([label, amount, per]) =>
+                `<tr class="border-b border-slate-100"><td class="p-3">${label}</td><td class="p-3 font-medium text-slate-700">${fmtTHB(amount)} THB</td><td class="p-3">${per}</td></tr>`).join('');
+            document.getElementById('costTableFoot').innerHTML =
+                `<tr><td class="p-3">Total Cost So Far</td><td class="p-3">${fmtTHB(b.fixedCost + b.variableCostPerAttendee * b.visitors)} THB</td><td class="p-3">${fmtTHB(b.costPerAttendee)} THB / pax</td></tr>`;
+
+            // กราฟ
+            businessChart.data.labels = history.map(h => new Date(h.t).toLocaleTimeString('en-GB'));
+            businessChart.data.datasets[0].data = history.map(() => b.breakEven);
+            businessChart.data.datasets[1].data = history.map(h => h.n);
+            businessChart.update();
+        }
 
         const carbonChart = new Chart(document.getElementById('carbonChart'), {
             type: 'doughnut',
@@ -454,13 +710,14 @@
             options: { responsive: true, plugins: { legend: { display: false } } }
         });
 
-        setInterval(async () => {
+        async function refreshData() {
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
             const liveBtn = document.getElementById('liveStatusBtn');
 
             try {
-                const response = await fetch('http://localhost:3000/api/data');
+                if (!templates) await loadEvent();
+                const response = await fetch(API + '/api/data');
                 const data = await response.json();
                 
                 statusDot.className = 'w-2 h-2 bg-emerald-500 rounded-full animate-pulse';
@@ -474,12 +731,9 @@
                     visitorCounter.innerText = data.totalVisitors.toLocaleString();
                     visitorCounter.classList.add('text-emerald-500');
                     setTimeout(() => visitorCounter.classList.remove('text-emerald-500'), 600);
-
-                    const bChartData = businessChart.data.datasets[1].data;
-                    const diff = data.totalVisitors - currentDisplay;
-                    bChartData[bChartData.length - 1] += diff; 
-                    businessChart.update();
                 }
+
+                renderBusiness(data.business, data.history);
 
                 document.getElementById('carbonValue').innerText = data.carbon.perVisitor.toFixed(2);
                 carbonChart.data.datasets[0].data = [data.travelModes.mrt, data.travelModes.bus, data.travelModes.car];
@@ -490,7 +744,10 @@
                 statusText.innerText = 'Offline: Check Sensor';
                 liveBtn.className = 'px-4 py-2 rounded-full border border-slate-200 bg-slate-50 text-slate-500 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium';
             }
-        }, 3000); 
+        }
+
+        refreshData();
+        setInterval(refreshData, 3000);
     </script>
 </body>
 </html>
