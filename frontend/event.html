@@ -86,7 +86,7 @@
                     Export Report
                 </button>
                 <button onclick="openModal()" class="px-4 py-2 rounded-full border border-slate-200 bg-white text-sm flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm text-slate-600 font-medium">
-                    System Status
+                    Camera
                 </button>
                 <button class="px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium" id="liveStatusBtn">
                     <div id="statusDot" class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> 
@@ -157,21 +157,38 @@
                     <div>
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="font-bold text-emerald-700">Carbon Engine</h3>
-                            <span class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">ESG Data</span>
+                            <span id="carbonStatusBadge" class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">ESG Data</span>
                         </div>
-                        <div class="mb-6">
+                        <div class="mb-4">
                             <p class="text-xs font-bold text-slate-400 mb-1">CARBON PER VISITOR</p>
                             <div class="flex items-center gap-3">
-                                <p class="text-3xl font-bold text-emerald-600"><span id="carbonValue">0.30</span> <span class="text-lg font-normal text-slate-500">kgCO2e</span></p>
-                                <span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full border border-emerald-200 font-medium">15% below standard</span>
+                                <p class="text-3xl font-bold text-emerald-600"><span id="carbonValue">–</span> <span class="text-lg font-normal text-slate-500">kgCO2e</span></p>
+                                <span id="carbonPaxBadge" class="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full border border-emerald-200 font-medium">Calculating…</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+                            <div class="bg-amber-50 rounded-lg p-2 border border-amber-100">
+                                <p class="text-xs text-amber-600 font-bold">SCOPE 1</p>
+                                <p class="text-sm font-bold text-amber-700"><span id="ovScope1">–</span></p>
+                                <p class="text-xs text-amber-500">kgCO2e</p>
+                            </div>
+                            <div class="bg-blue-50 rounded-lg p-2 border border-blue-100">
+                                <p class="text-xs text-blue-600 font-bold">SCOPE 2</p>
+                                <p class="text-sm font-bold text-blue-700"><span id="ovScope2">–</span></p>
+                                <p class="text-xs text-blue-500">kgCO2e</p>
+                            </div>
+                            <div class="bg-emerald-50 rounded-lg p-2 border border-emerald-100">
+                                <p class="text-xs text-emerald-600 font-bold">SCOPE 3</p>
+                                <p class="text-sm font-bold text-emerald-700"><span id="ovScope3">–</span></p>
+                                <p class="text-xs text-emerald-500">kgCO2e</p>
                             </div>
                         </div>
                         <div class="flex items-center justify-center relative">
-                            <div class="w-48 h-48"><canvas id="carbonChart"></canvas></div>
+                            <div class="w-40 h-40"><canvas id="carbonChart"></canvas></div>
                             <div class="absolute right-0 flex flex-col gap-3 text-sm text-slate-600 font-medium">
-                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> MRT/BTS</div>
-                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-400"></span> Bus</div>
-                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-400"></span> Car</div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-400"></span> Scope 1</div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-400"></span> Scope 2</div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Scope 3</div>
                             </div>
                         </div>
                     </div>
@@ -309,28 +326,248 @@
         <!-- CARBON DETAILED -->
         <!-- ========================================== -->
         <div id="page-carbon" class="page-content hidden fade-in">
-            <div class="grid grid-cols-2 gap-6">
-                <div class="card">
-                    <h3 class="font-bold text-emerald-700 mb-4 text-xl">GHG Emissions Breakdown</h3>
-                    <p class="text-sm text-slate-500 mb-6">Following TGO & GHG Protocol Standards</p>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center p-3 border border-slate-100 rounded-lg bg-slate-50">
-                            <div><p class="font-bold text-slate-700">Scope 2: Electricity</p><p class="text-xs text-slate-400">Area-based MVP estimation</p></div>
-                            <p class="font-bold text-emerald-600">1,662 kgCO2e</p>
-                        </div>
-                        <div class="flex justify-between items-center p-3 border border-slate-100 rounded-lg bg-slate-50">
-                            <div><p class="font-bold text-slate-700">Scope 3: Waste (Landfill)</p><p class="text-xs text-slate-400">Average waste generation</p></div>
-                            <p class="font-bold text-emerald-600">348 kgCO2e</p>
-                        </div>
-                        <div class="flex justify-between items-center p-3 border border-emerald-100 rounded-lg bg-emerald-50">
-                            <div><p class="font-bold text-emerald-700">Scope 3: Verified Travel</p><p class="text-xs text-emerald-500">Live AI Vision Detection</p></div>
-                            <p class="font-bold text-emerald-600">525 kgCO2e</p>
+            <h3 class="font-bold text-emerald-700 mb-4 text-xl">GHG Calculator</h3>
+            <div class="grid grid-cols-2 gap-6 items-start">
+                <div>
+                    <div class="card my-4">
+                        <div class="space-y-4">
+                            <p class="text-lg font-bold text-slate-800 mb-6">1.Event setup</p>
+                            <label class="block text-xs font-bold text-slate-500 mb-4">EVENT NAME
+                                <input id="ename" type="text" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                            </label>
+                            <label class="block text-xs font-bold text-slate-500 mb-4">ZONE ID
+                                <input id="ezone" type="text" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                            </label>
+                            <label class="block text-xs font-bold text-slate-500 mb-4">EVENT START DATE
+                                <input id="estart" type="date" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                            </label>
+                            <label class="block text-xs font-bold text-slate-500 mb-4">EVENT END DATE
+                                <input id="eend" type="date" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                            </label>
+                            <label class="block text-xs font-bold text-slate-500 mb-4">OPENING TIME
+                                <input id="eopen" type="time" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                            </label>
+                            <label class="block text-xs font-bold text-slate-500 mb-4">CLOSING TIME
+                                <input id="eclose" type="time" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+                            </label>
                         </div>
                     </div>
+
+                    <div class="card my-4">
+                            <p class="text-lg font-bold text-slate-800 mb-6">2.People Counting (assume that everyone travel by car)</p>
+                            <label class="block text-xs font-bold text-slate-500 mb-4">Total Visitors (CCTV)
+                                <input id="carbonPeopleCount" type="number" readonly class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-700">
+                            </label> 
+                    </div>
+
+                    <div class="card my-4">
+                        <p class="text-lg font-bold text-slate-800 mb-6">3.Mall Setup</p>
+                        <label class="block text-xs font-bold text-slate-500 mb-4">Do you have a power reading for the event zone?
+                            <select id="power" onchange="togglePowerSetup(this.value)" class="mt-1 w-full h-10 border border-slate-200 rounded-lg px-3 text-sm bg-slate-50 text-slate-700">
+                                <option value="" selected disabled> -- Select an option --</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                        </label>
+
+                        <div id="power-yes-section">
+                            <label class="block text-xs font-bold text-slate-500 mb-4">What is the power reading for the event zone? (kW)
+                                <!-- ใส่ h-10 เหมือนกัน -->
+                                <input id="powerYes" type="number" class="mt-1 w-full h-10 border border-slate-200 rounded-lg px-3 text-sm bg-slate-50 text-slate-700">
+                            </label>
+                        </div>
+
+                        <div id="power-no-section" class="hidden">
+                            <label class="block text-xs font-bold text-slate-500 mb-4">What is the fixed power load of the event? (kW)
+                                <input id="powerNo" type="number" class="mt-1 w-full h-10 border border-slate-200 rounded-lg px-3 text-sm bg-slate-50 text-slate-700">
+                            </label>
+                        </div>
+
+                        <label class="block text-xs font-bold text-slate-500 mb-4">What is the amount of water used for the event? (litres)
+                            <input id="waterUsed" type="number" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-700">
+                        </label>
+
+                        <label class="block text-xs font-bold text-slate-500 mb-4">What is the amount of waste generated by the event? (kg)
+                            <input id="wasteGenerated" type="number" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-700">
+                        </label>
+
+                        <label class="block text-xs font-bold text-slate-500 mb-4">What is the amount of waste that seperated for recycle? (kg)
+                            <input id="wasteRecycle" type="number" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-700">
+                        </label>
+
+                        <label class="block text-xs font-bold text-slate-500 mb-4">What is the amount of food waste? (kg)
+                            <input id="foodWaste" type="number" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-700">
+                        </label>
+
+                    </div>
+                    
+                    <div class="card my-4">
+                        <p class="text-lg font-bold text-slate-800 mb-6">4. Organizer Setup</p>
+                        <form id="organizer-form">
+                            <fieldset>
+                                <legend class="block text-xs font-bold text-slate-500 my-2">Materials</legend>
+                                <div id="materials"></div>
+                                <button type="button" id="add-material" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-700">+ Add material</button>
+                            </fieldset>
+                            <fieldset>
+                                <legend class="block text-xs font-bold text-slate-500 my-2">Giveaways</legend>
+                                <div id="giveaways"></div>
+                                <button type="button" id="add-giveaway" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-700">+ Add giveaway</button>
+                            </fieldset>
+                            <fieldset>
+                                <legend class="block text-xs font-bold text-slate-500 my-2">Food & Beverage</legend>
+                                <div id="meals"></div>
+                                <button type="button" id="add-meals" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-700">+ Add meals</button>
+                            </fieldset>
+                            <fieldset>
+                                <legend class="block text-md font-bold text-slate-500 my-2">Staff travel</legend>
+                                <label class="block text-xs font-bold text-slate-500 my-2">Total Staff Count
+                                    <input type="number" id="staff-total" name="staff_count" min="0" placeholder="0" oninput="onStaffCountChange()" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-700">
+                                </label>
+
+                                <div id="staff-modes-container" class="hidden mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-xs font-bold text-slate-600">Breakdown by Transport Mode:</span>
+                                        <span id="staff-allocation-badge" class="text-xs px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-700">0 / 0 allocated</span>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-3 text-xs">
+                                        <label class="block text-slate-600 font-medium">Personal Car
+                                            <input type="number" name="staff_car" class="staff-mode-count mt-1 w-full border border-slate-200 rounded px-2 py-1.5 text-sm bg-white" data-mode="car" min="0" placeholder="0" oninput="checkStaffSum()">
+                                        </label>
+                                        <label class="block text-slate-600 font-medium">BTS / MRT (Train)
+                                            <input type="number" name="staff_bts_mrt" class="staff-mode-count mt-1 w-full border border-slate-200 rounded px-2 py-1.5 text-sm bg-white" data-mode="bts_mrt" min="0" placeholder="0" oninput="checkStaffSum()">
+                                        </label>
+                                        <label class="block text-slate-600 font-medium">Public Bus
+                                            <input type="number" name="staff_bus" class="staff-mode-count mt-1 w-full border border-slate-200 rounded px-2 py-1.5 text-sm bg-white" data-mode="bus" min="0" placeholder="0" oninput="checkStaffSum()">
+                                        </label>
+                                        <label class="block text-slate-600 font-medium">Motorcycle / Taxi
+                                            <input type="number" name="staff_motorcycle" class="staff-mode-count mt-1 w-full border border-slate-200 rounded px-2 py-1.5 text-sm bg-white" data-mode="motorcycle" min="0" placeholder="0" oninput="checkStaffSum()">
+                                        </label>
+                                    </div>
+
+                                    <label class="block text-xs font-bold text-slate-500 mt-3">Average Round-trip distance per person (km)
+                                        <input type="number" id="staff-distance" name="staff_distance_km" min="0" placeholder="e.g. 25" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white text-slate-700">
+                                    </label>
+                                </div>
+                            </fieldset>
+                            <fieldset>
+                                <legend class="block text-md font-bold text-slate-500 my-2">Generator</legend>
+                                <label class="block text-xs font-bold text-slate-500 my-2">Diesel used (litres)
+                                    <input type="number" name="generator_diesel_litre" min="0" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-700">
+                                </label>
+                            </fieldset>
+
+                        </form>
+                        <pre id="result"></pre>
+                    </div>
+
+                    <div class="card my-4">
+                        <p class="text-lg font-bold text-slate-800 mb-6">5. Contractors Setup</p>
+                        <form id="contractor-form">
+                            <fieldset>
+                                <legend class="block text-xs font-bold text-slate-500 my-2">Transportation</legend>
+                                <div id="contractor-transportation"></div>
+                                <button type="button" id="add-contractor-transportation" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">+ Add transportation</button>
+                            </fieldset>
+                        </form>
+                    </div>
+
                 </div>
-                <div class="card flex flex-col justify-center items-center text-center bg-gradient-to-b from-white to-emerald-50/30">
-                    <h3 class="text-2xl font-bold text-emerald-700 mb-2">Green Event Eligible</h3>
-                    <p class="text-slate-500 text-sm px-6">With a current carbon footprint 15% below standard, this event is on track to receive The Mall Group's Green Event Certification.</p>
+
+                <!-- RIGHT COLUMN: RESULTS DASHBOARD -->
+                <div class="space-y-6 sticky top-6 mt-4">
+                    <!-- Total Carbon Hero Card -->
+                    <div class="card bg-gradient-to-br from-white via-emerald-50/20 to-emerald-100/30 border-2 border-emerald-200 shadow-md">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-bold text-emerald-800 tracking-wider uppercase bg-emerald-100 px-2.5 py-1 rounded-full">Carbon Engine Summary</span>
+                            <button type="button" onclick="calculateCarbon()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow hover:shadow-md flex items-center gap-1">
+                                <span>⚡ Recalculate</span>
+                            </button>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-xs font-bold text-slate-400 uppercase">Total Carbon Footprint</p>
+                            <div class="flex items-baseline gap-2 mt-1">
+                                <span class="text-4xl font-extrabold text-emerald-700" id="resTotalCarbon">0.00</span>
+                                <span class="text-base font-semibold text-slate-500">kgCO2e</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 pt-3 border-t border-emerald-100">
+                            <div>
+                                <p class="text-[11px] font-bold text-slate-400 uppercase">Carbon per Visitor</p>
+                                <p class="text-lg font-bold text-slate-800 mt-0.5"><span id="resCarbonPerPax">0.00</span> <span class="text-xs font-normal text-slate-500">kgCO2e/pax</span></p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] font-bold text-slate-400 uppercase">Total Visitors (CCTV)</p>
+                                <p class="text-lg font-bold text-slate-800 mt-0.5"><span id="resVisitors">0</span> <span class="text-xs font-normal text-slate-500">people</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scope 1, 2, 3 Breakdown -->
+                    <div class="card">
+                        <h4 class="font-bold text-slate-800 mb-3 text-sm">Emissions by GHG Protocol Scope</h4>
+                        
+                        <div class="space-y-3">
+                            <!-- Scope 1 -->
+                            <div class="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs font-bold text-slate-700">Scope 1: Direct (Generator)</span>
+                                    <span class="text-xs font-bold text-slate-800"><span id="resScope1">0.00</span> kgCO2e</span>
+                                </div>
+                                <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                    <div id="barScope1" class="bg-amber-500 h-full rounded-full transition-all" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Scope 2 -->
+                            <div class="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs font-bold text-slate-700">Scope 2: Purchased Electricity</span>
+                                    <span class="text-xs font-bold text-slate-800"><span id="resScope2">0.00</span> kgCO2e</span>
+                                </div>
+                                <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                    <div id="barScope2" class="bg-blue-500 h-full rounded-full transition-all" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Scope 3 -->
+                            <div class="p-3 bg-emerald-50/60 border border-emerald-100 rounded-lg">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs font-bold text-emerald-800">Scope 3: Value Chain &amp; Travel</span>
+                                    <span class="text-xs font-bold text-emerald-800"><span id="resScope3">0.00</span> kgCO2e</span>
+                                </div>
+                                <div class="w-full bg-emerald-200 h-1.5 rounded-full overflow-hidden">
+                                    <div id="barScope3" class="bg-emerald-500 h-full rounded-full transition-all" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Breakdown -->
+                    <div class="card">
+                        <h4 class="font-bold text-slate-800 mb-3 text-sm">Detailed Activity Contribution</h4>
+                        <div class="divide-y divide-slate-100 text-xs">
+                            <div class="flex justify-between py-2"><span class="text-slate-600">⚡ Electricity (kWh)</span><span class="font-bold text-slate-800" id="detElec">0.00 kgCO2e</span></div>
+                            <div class="flex justify-between py-2"><span class="text-slate-600">👥 Visitor Travel (CCTV)</span><span class="font-bold text-slate-800" id="detVisitors">0.00 kgCO2e</span></div>
+                            <div class="flex justify-between py-2"><span class="text-slate-600">👔 Staff Commute</span><span class="font-bold text-slate-800" id="detStaff">0.00 kgCO2e</span></div>
+                            <div class="flex justify-between py-2"><span class="text-slate-600">🚚 Contractor Logistics</span><span class="font-bold text-slate-800" id="detContractor">0.00 kgCO2e</span></div>
+                            <div class="flex justify-between py-2"><span class="text-slate-600">📦 Materials &amp; Giveaways</span><span class="font-bold text-slate-800" id="detMaterials">0.00 kgCO2e</span></div>
+                            <div class="flex justify-between py-2"><span class="text-slate-600">🍱 Food &amp; Beverages</span><span class="font-bold text-slate-800" id="detMeals">0.00 kgCO2e</span></div>
+                            <div class="flex justify-between py-2"><span class="text-slate-600">🗑️ Waste Generated &amp; Recycled</span><span class="font-bold text-slate-800" id="detWaste">0.00 kgCO2e</span></div>
+                            <div class="flex justify-between py-2"><span class="text-slate-600">💧 Water Consumption</span><span class="font-bold text-slate-800" id="detWater">0.00 kgCO2e</span></div>
+                            <div class="flex justify-between py-2"><span class="text-slate-600">⛽ Generator Diesel</span><span class="font-bold text-slate-800" id="detDiesel">0.00 kgCO2e</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Certification Card -->
+                    <div class="card flex flex-col justify-center items-center text-center bg-gradient-to-b from-white to-emerald-50/50 border border-emerald-100">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg mb-2">🌿</div>
+                        <h4 class="text-lg font-bold text-emerald-800 mb-1">Green Event Standard</h4>
+                        <p class="text-slate-500 text-xs px-2 leading-relaxed" id="certStatus">Calculated using Thailand Greenhouse Gas Management Organization (TGO) Emission Factors.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -339,7 +576,14 @@
     <!-- ========================================== -->
     <!-- HIDDEN REPORT TEMPLATE (For PDF Export) -->
     <!-- ========================================== -->
-    <div id="report-template" class="hidden bg-white p-10 max-w-4xl mx-auto text-slate-800">
+    <div id="report-template" class="hidden bg-white max-w-4xl mx-auto text-slate-800" style="padding: 2.5rem 2.5rem 4rem 2.5rem;">
+        <style>
+            #report-template tr    { page-break-inside: avoid; }
+            #report-template thead { page-break-after:  avoid; }
+            #report-template table { page-break-inside: avoid; border-collapse: collapse; }
+            #report-template .card-block { page-break-inside: avoid; }
+            #report-template .mb-8 { page-break-inside: avoid; }
+        </style>
         <!-- Report Header -->
         <div class="border-b-2 border-blue-800 pb-6 mb-8 flex justify-between items-end">
             <div>
@@ -379,7 +623,31 @@
                     <p class="text-2xl font-bold text-slate-700"><span id="rep-cost">–</span> THB</p>
                 </div>
             </div>
-            <p class="text-xs text-slate-500 italic">* Note: Baseline cost calculations include marketing, venue setup, and operational operations.</p>
+            <div class="grid grid-cols-3 gap-4 mb-4">
+                <div class="bg-blue-50 p-4 border border-blue-200 rounded">
+                    <p class="text-xs font-bold text-blue-500 uppercase mb-1">Break-Even Attendance</p>
+                    <p class="text-2xl font-bold text-blue-800" id="rep-breakeven">–</p>
+                </div>
+                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Break-Even Progress</p>
+                    <p class="text-2xl font-bold text-blue-700" id="rep-progress">–</p>
+                </div>
+                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Projected Profit / Loss</p>
+                    <p class="text-2xl font-bold text-slate-800" id="rep-profit">–</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Event Status</p>
+                    <p class="text-xl font-bold text-slate-800" id="rep-status">–</p>
+                </div>
+                <div class="bg-slate-50 p-4 border border-slate-200 rounded">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Projected End-of-Event Visitors</p>
+                    <p class="text-xl font-bold text-slate-800" id="rep-projected">–</p>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 italic mt-2">* Note: Baseline cost calculations include marketing, venue setup, and operational operations.</p>
         </div>
 
         <!-- Section 3: ESG Impact -->
@@ -399,31 +667,42 @@
                         </thead>
                         <tbody>
                             <tr>
+                                <td class="border border-slate-300 p-2">Total GHG Emissions</td>
+                                <td class="border border-slate-300 p-2 font-bold text-slate-800"><span id="rep-total-carbon">–</span> kgCO2e</td>
+                            </tr>
+                            <tr>
                                 <td class="border border-slate-300 p-2">Average Carbon per Visitor</td>
                                 <td class="border border-slate-300 p-2 font-bold text-emerald-700"><span id="rep-carbon">0.00</span> kgCO2e</td>
                             </tr>
-                            <tr>
-                                <td class="border border-slate-300 p-2">Scope 2: Electricity Estimation</td>
-                                <td class="border border-slate-300 p-2">1,662 kgCO2e</td>
+                            <tr class="bg-amber-50">
+                                <td class="border border-slate-300 p-2 font-medium">Scope 1: Direct Emissions (Diesel)</td>
+                                <td class="border border-slate-300 p-2 font-bold text-amber-700"><span id="rep-scope1">–</span> kgCO2e</td>
                             </tr>
-                            <tr>
-                                <td class="border border-slate-300 p-2">Scope 3: Verified Travel</td>
-                                <td class="border border-slate-300 p-2">525 kgCO2e</td>
+                            <tr class="bg-blue-50">
+                                <td class="border border-slate-300 p-2 font-medium">Scope 2: Electricity Consumption</td>
+                                <td class="border border-slate-300 p-2 font-bold text-blue-700"><span id="rep-scope2">–</span> kgCO2e</td>
+                            </tr>
+                            <tr class="bg-emerald-50">
+                                <td class="border border-slate-300 p-2 font-medium">Scope 3: Indirect Emissions</td>
+                                <td class="border border-slate-300 p-2 font-bold text-emerald-700"><span id="rep-scope3">–</span> kgCO2e</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="bg-slate-50 border border-slate-200 p-4 rounded flex flex-col justify-center">
-                    <p class="text-xs font-bold text-slate-500 uppercase mb-2">Visitor Transportation Breakdown</p>
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-2">Scope 3 Activity Breakdown</p>
                     <div class="space-y-2 text-sm text-slate-700 font-medium">
-                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Mass Transit (MRT/BTS):</span> <span id="rep-mrt">0%</span></div>
-                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Public Bus:</span> <span id="rep-bus">0%</span></div>
-                        <div class="flex justify-between"><span>Personal Vehicle:</span> <span id="rep-car">0%</span></div>
+                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Visitor Transport:</span> <span id="rep-s3-visitors">–</span></div>
+                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Staff Transport:</span> <span id="rep-s3-staff">–</span></div>
+                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Materials &amp; Giveaways:</span> <span id="rep-s3-materials">–</span></div>
+                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Meals &amp; Catering:</span> <span id="rep-s3-meals">–</span></div>
+                        <div class="flex justify-between border-b border-slate-200 pb-1"><span>Waste Management:</span> <span id="rep-s3-waste">–</span></div>
+                        <div class="flex justify-between"><span>Water Consumption:</span> <span id="rep-s3-water">–</span></div>
                     </div>
                 </div>
             </div>
-            <div class="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded text-sm text-emerald-800 font-medium">
-                Status: Eligible for The Mall Group Green Event Certification (Currently operating 15% below standard emission baselines).
+            <div class="mt-4 p-3 border rounded text-sm font-medium" id="rep-cert-box">
+                <span id="rep-cert">–</span>
             </div>
         </div>
 
@@ -438,14 +717,352 @@
 
     <!-- Scripts -->
     <script>
+        // TGO Standard Emission Factors (Thailand)
+        const EF = {
+            electricity: 0.4750,      // kgCO2e per kWh (Grid mix TGO)
+            diesel: 2.7080,           // kgCO2e per litre (Diesel generator)
+            water: 0.000795,          // kgCO2e per litre (MWA tap water)
+            waste: {
+                landfill: 2.3200,     // kgCO2e per kg (General waste)
+                food: 2.5300,         // kgCO2e per kg (Food waste)
+                recycle_offset: -0.45 // kgCO2e per kg (Recycled offset)
+            },
+            material: {
+                paper: 1.25, pvc: 3.10, wood: 0.45, foam: 4.20,
+                plastic: 2.80, metal: 2.10, fabric: 3.90
+            },
+            meal: {
+                meat: 3.50, vegetarian: 1.20, beverage: 0.35
+            },
+            transport: {
+                car: 0.170, motorcycle: 0.075, taxi: 0.160,
+                bus: 0.035, bts_mrt: 0.025, walk: 0
+            }
+        };
+
+        // ตัวช่วยสร้าง <option> จากชื่อใน EF
+        const options = (obj) =>
+            Object.keys(obj).map(k => `<option value="${k}">${k}</option>`).join('');
+
+        function addRow(containerId, html) {
+            const row = document.createElement('div');
+            row.className = 'row flex gap-2 items-center mb-2.5';
+            row.innerHTML = html + `
+                <button type="button" class="remove w-10 h-10 shrink-0 flex items-center justify-center bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-100 hover:text-rose-700 transition-colors font-bold text-sm">
+                    ✕
+                </button>
+            `;
+            row.querySelector('.remove').onclick = () => row.remove();
+            document.getElementById(containerId).appendChild(row);
+        }
+
+        document.getElementById('add-material').onclick = () =>
+            addRow('materials', `
+                <select name="material_type" class="w-2/5 h-10 border border-slate-200 rounded-lg px-3 text-sm bg-white text-slate-700 capitalize">
+                    ${options(EF.material)}
+                </select>
+                <input type="number" name="material_weight_kg" placeholder="Weight (kg)" min="0" step="any"
+                    class="flex-1 h-10 border border-slate-200 rounded-lg px-3 text-sm bg-white text-slate-700">
+            `);
+
+        document.getElementById('add-giveaway').onclick = () =>
+            addRow('giveaways', `
+                <input type="text" name="giveaway_item" placeholder="Item name" class="flex-1 h-10 border border-slate-200 rounded-lg px-3 text-sm bg-white text-slate-700">
+                <select name="giveaway_material" class="w-32 h-10 border border-slate-200 rounded-lg px-2 text-sm bg-white text-slate-700 capitalize">${options(EF.material)}</select>
+                <input type="number" name="giveaway_qty" placeholder="Qty" min="0" class="w-20 h-10 border border-slate-200 rounded-lg px-2 text-sm bg-white text-slate-700">
+                <input type="number" name="giveaway_weight_kg" placeholder="Weight (kg)" min="0" step="0.01" class="w-24 h-10 border border-slate-200 rounded-lg px-2 text-sm bg-white text-slate-700">
+            `);
+
+        document.getElementById('add-meals').onclick = () =>
+            addRow('meals', `
+                <select name="meal_type" class="w-2/5 h-10 border border-slate-200 rounded-lg px-3 text-sm bg-white text-slate-700 capitalize">${options(EF.meal)}</select>
+                <input type="number" name="meal_qty" placeholder="Servings" min="0" class="flex-1 h-10 border border-slate-200 rounded-lg px-3 text-sm bg-white text-slate-700">
+            `);
+
+        document.getElementById('add-contractor-transportation').onclick = () =>
+            addRow('contractor-transportation', `
+                <select name="contractor_transportation_type" class="w-2/5 h-10 border border-slate-200 rounded-lg px-3 text-sm bg-white text-slate-700 capitalize">${options(EF.transport)}</select>
+                <input type="number" name="contractor_transportation_distance_km" placeholder="Distance (km)" min="0" class="flex-1 h-10 border border-slate-200 rounded-lg px-3 text-sm bg-white text-slate-700">
+            `);
+
+        function onStaffCountChange() {
+            const total = parseInt(document.getElementById('staff-total').value) || 0;
+            const container = document.getElementById('staff-modes-container');
+            if (total > 0) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+            checkStaffSum();
+        }
+
+        function checkStaffSum() {
+            const total = parseInt(document.getElementById('staff-total').value) || 0;
+            const inputs = document.querySelectorAll('.staff-mode-count');
+            let sum = 0;
+            inputs.forEach(input => {
+                sum += parseInt(input.value) || 0;
+            });
+
+            const badge = document.getElementById('staff-allocation-badge');
+            if (!badge) return;
+
+            if (sum === total && total > 0) {
+                badge.className = 'text-xs px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700';
+                badge.innerText = `✓ Matched (${sum}/${total})`;
+            } else if (sum > total) {
+                badge.className = 'text-xs px-2 py-0.5 rounded-full font-bold bg-rose-100 text-rose-700';
+                badge.innerText = `Exceeded (${sum}/${total})`;
+            } else {
+                badge.className = 'text-xs px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-700';
+                badge.innerText = `${sum}/${total} allocated (${total - sum} remaining)`;
+            }
+            calculateCarbon();
+        }
+
+        // ==========================================
+        // CARBON ENGINE CALCULATOR
+        // ==========================================
+        function calculateCarbon() {
+            // 1. Event duration calculation (hours)
+            let hours = 8;
+            const openTime = document.getElementById('eopen')?.value;
+            const closeTime = document.getElementById('eclose')?.value;
+            const startDate = document.getElementById('estart')?.value;
+            const endDate = document.getElementById('eend')?.value;
+
+            if (openTime && closeTime) {
+                const [oh, om] = openTime.split(':').map(Number);
+                const [ch, cm] = closeTime.split(':').map(Number);
+                const diffH = (ch * 60 + cm - (oh * 60 + om)) / 60;
+                if (diffH > 0) hours = diffH;
+            }
+            if (startDate && endDate) {
+                const d1 = new Date(startDate);
+                const d2 = new Date(endDate);
+                const diffDays = Math.max(1, Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1);
+                hours = hours * diffDays;
+            }
+
+            // Scope 1: Diesel generator
+            const dieselLitre = parseFloat(document.querySelector('input[name="generator_diesel_litre"]')?.value) || 0;
+            const s1_diesel = dieselLitre * EF.diesel;
+            const scope1 = s1_diesel;
+
+            // Scope 2: Electricity
+            const powerOpt = document.getElementById('power')?.value;
+            let powerKw = 0;
+            if (powerOpt === 'Yes') {
+                powerKw = parseFloat(document.getElementById('powerYes')?.value) || 0;
+            } else if (powerOpt === 'No') {
+                powerKw = parseFloat(document.getElementById('powerNo')?.value) || 0;
+            }
+            const kwh = powerKw * hours;
+            const scope2 = kwh * EF.electricity;
+
+            // Scope 3:
+            // A) Visitors from CCTV (assumed 20 km round-trip by car)
+            const visitors = parseInt(document.getElementById('carbonPeopleCount')?.value) || 0;
+            const s3_visitors = visitors * 20 * EF.transport.car;
+
+            // B) Water
+            const waterLitres = parseFloat(document.getElementById('waterUsed')?.value) || 0;
+            const s3_water = waterLitres * EF.water;
+
+            // C) Waste
+            const wasteGen = parseFloat(document.getElementById('wasteGenerated')?.value) || 0;
+            const wasteRec = parseFloat(document.getElementById('wasteRecycle')?.value) || 0;
+            const foodWaste = parseFloat(document.getElementById('foodWaste')?.value) || 0;
+            const s3_waste = Math.max(0, (wasteGen * EF.waste.landfill) + (foodWaste * EF.waste.food) + (wasteRec * EF.waste.recycle_offset));
+
+            // D) Materials
+            let s3_materials = 0;
+            document.querySelectorAll('#materials .row').forEach(row => {
+                const type = row.querySelector('[name="material_type"]')?.value;
+                const weight = parseFloat(row.querySelector('[name="material_weight_kg"]')?.value) || 0;
+                if (type && EF.material[type]) {
+                    s3_materials += weight * EF.material[type];
+                }
+            });
+
+            // E) Giveaways
+            let s3_giveaways = 0;
+            document.querySelectorAll('#giveaways .row').forEach(row => {
+                const type = row.querySelector('[name="giveaway_material"]')?.value;
+                const qty = parseFloat(row.querySelector('[name="giveaway_qty"]')?.value) || 0;
+                const wt = parseFloat(row.querySelector('[name="giveaway_weight_kg"]')?.value) || 0;
+                if (type && EF.material[type]) {
+                    s3_giveaways += qty * wt * EF.material[type];
+                }
+            });
+
+            // F) Meals
+            let s3_meals = 0;
+            document.querySelectorAll('#meals .row').forEach(row => {
+                const type = row.querySelector('[name="meal_type"]')?.value;
+                const qty = parseFloat(row.querySelector('[name="meal_qty"]')?.value) || 0;
+                if (type && EF.meal[type]) {
+                    s3_meals += qty * EF.meal[type];
+                }
+            });
+
+            // G) Staff travel
+            const staffDist = parseFloat(document.getElementById('staff-distance')?.value) || 20;
+            let s3_staff = 0;
+            document.querySelectorAll('.staff-mode-count').forEach(inp => {
+                const mode = inp.dataset.mode;
+                const count = parseInt(inp.value) || 0;
+                if (mode && EF.transport[mode]) {
+                    s3_staff += count * staffDist * EF.transport[mode];
+                }
+            });
+
+            // H) Contractors transportation
+            let s3_contractor = 0;
+            document.querySelectorAll('#contractor-transportation .row').forEach(row => {
+                const type = row.querySelector('[name="contractor_transportation_type"]')?.value;
+                const dist = parseFloat(row.querySelector('[name="contractor_transportation_distance_km"]')?.value) || 0;
+                if (type && EF.transport[type]) {
+                    s3_contractor += dist * EF.transport[type];
+                }
+            });
+
+            const scope3 = s3_visitors + s3_water + s3_waste + s3_materials + s3_giveaways + s3_meals + s3_staff + s3_contractor;
+            const totalCarbon = scope1 + scope2 + scope3;
+            const carbonPerPax = visitors > 0 ? (totalCarbon / visitors) : 0;
+
+            // Update DOM Results
+            const setTxt = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = typeof val === 'number' ? val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : val;
+            };
+
+            setTxt('resTotalCarbon', totalCarbon);
+            setTxt('resCarbonPerPax', carbonPerPax);
+            setTxt('resVisitors', visitors);
+
+            setTxt('resScope1', scope1);
+            setTxt('resScope2', scope2);
+            setTxt('resScope3', scope3);
+
+            // Progress Bars
+            const maxVal = Math.max(totalCarbon, 1);
+            const setBar = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.style.width = Math.min(100, Math.round((val / maxVal) * 100)) + '%';
+            };
+            setBar('barScope1', scope1);
+            setBar('barScope2', scope2);
+            setBar('barScope3', scope3);
+
+            // Detailed Activities
+            setTxt('detElec', scope2.toFixed(2) + ' kgCO2e');
+            setTxt('detVisitors', s3_visitors.toFixed(2) + ' kgCO2e');
+            setTxt('detStaff', s3_staff.toFixed(2) + ' kgCO2e');
+            setTxt('detContractor', s3_contractor.toFixed(2) + ' kgCO2e');
+            setTxt('detMaterials', (s3_materials + s3_giveaways).toFixed(2) + ' kgCO2e');
+            setTxt('detMeals', s3_meals.toFixed(2) + ' kgCO2e');
+            setTxt('detWaste', s3_waste.toFixed(2) + ' kgCO2e');
+            setTxt('detWater', s3_water.toFixed(2) + ' kgCO2e');
+            setTxt('detDiesel', s1_diesel.toFixed(2) + ' kgCO2e');
+
+            // Certification Text
+            const certEl = document.getElementById('certStatus');
+            if (certEl) {
+                if (visitors === 0) {
+                    certEl.innerText = 'Waiting for visitor data from CCTV camera to assess per-visitor performance.';
+                } else if (carbonPerPax <= 0.40) {
+                    certEl.innerText = `Eligible for The Mall Group Green Event Certification (Operating at ${carbonPerPax.toFixed(2)} kgCO2e/pax, well below baseline).`;
+                } else {
+                    certEl.innerText = `Current footprint is ${carbonPerPax.toFixed(2)} kgCO2e/pax. Review reduction in Materials or Electricity to improve status.`;
+                }
+            }
+
+            // ── Sync to Overview card ──────────────────────────────────────────
+            // Per-visitor number
+            const ovCarbonVal = document.getElementById('carbonValue');
+            if (ovCarbonVal) ovCarbonVal.innerText = carbonPerPax.toFixed(2);
+
+            // Scope breakdown mini stats
+            const fmt = v => v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const ovS1 = document.getElementById('ovScope1'); if (ovS1) ovS1.innerText = fmt(scope1);
+            const ovS2 = document.getElementById('ovScope2'); if (ovS2) ovS2.innerText = fmt(scope2);
+            const ovS3 = document.getElementById('ovScope3'); if (ovS3) ovS3.innerText = fmt(scope3);
+
+            // Status badge (top-right of card)
+            const badge = document.getElementById('carbonStatusBadge');
+            if (badge) {
+                if (visitors === 0) {
+                    badge.className = 'text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium';
+                    badge.innerText = 'Awaiting Data';
+                } else if (carbonPerPax <= 0.40) {
+                    badge.className = 'text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded-md font-medium';
+                    badge.innerText = '🟢 Green Certified';
+                } else {
+                    badge.className = 'text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-md font-medium';
+                    badge.innerText = '⚠️ Review Needed';
+                }
+            }
+
+            // Per-pax comparison badge
+            const paxBadge = document.getElementById('carbonPaxBadge');
+            if (paxBadge) {
+                if (visitors === 0) {
+                    paxBadge.className = 'text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full border border-slate-200 font-medium';
+                    paxBadge.innerText = 'No visitors yet';
+                } else {
+                    const baseline = 0.40;
+                    const pct = Math.abs(((carbonPerPax - baseline) / baseline) * 100).toFixed(1);
+                    if (carbonPerPax <= baseline) {
+                        paxBadge.className = 'text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full border border-emerald-200 font-medium';
+                        paxBadge.innerText = `${pct}% below baseline`;
+                    } else {
+                        paxBadge.className = 'text-xs bg-red-50 text-red-700 px-2 py-1 rounded-full border border-red-200 font-medium';
+                        paxBadge.innerText = `${pct}% above baseline`;
+                    }
+                }
+            }
+
+            // Update donut chart with Scope 1 / 2 / 3 breakdown
+            if (typeof carbonChart !== 'undefined' && carbonChart) {
+                carbonChart.data.labels = ['Scope 1', 'Scope 2', 'Scope 3'];
+                carbonChart.data.datasets[0].data = [
+                    parseFloat(scope1.toFixed(4)) || 0,
+                    parseFloat(scope2.toFixed(4)) || 0,
+                    parseFloat(scope3.toFixed(4)) || 0
+                ];
+                carbonChart.data.datasets[0].backgroundColor = ['#fbbf24', '#60a5fa', '#10b981'];
+                carbonChart.update();
+            }
+        }
+
+        function togglePowerSetup(value) {
+            const yesSection = document.getElementById('power-yes-section');
+            const noSection = document.getElementById('power-no-section');
+            if(value === 'Yes') {
+                yesSection.classList.remove('hidden');
+                noSection.classList.add('hidden');
+            } else if (value === 'No') {
+                yesSection.classList.add('hidden');
+                noSection.classList.remove('hidden');
+            } else {
+                yesSection.classList.add('hidden');
+                noSection.classList.add('hidden');
+            }
+        }
         function switchTab(targetPageId, btnElement) {
+            localStorage.setItem('activeTab', targetPageId);
+            location.hash = targetPageId;
+
             const navBtns = document.querySelectorAll('.nav-btn');
             navBtns.forEach(b => {
                 b.classList.remove('bg-blue-50', 'text-blue-700', 'font-bold');
                 b.classList.add('hover:text-blue-700', 'hover:bg-blue-50');
             });
-            btnElement.classList.remove('hover:text-blue-700', 'hover:bg-blue-50');
-            btnElement.classList.add('bg-blue-50', 'text-blue-700', 'font-bold');
+            if (btnElement) {
+                btnElement.classList.remove('hover:text-blue-700', 'hover:bg-blue-50');
+                btnElement.classList.add('bg-blue-50', 'text-blue-700', 'font-bold');
+            }
 
             const pages = document.querySelectorAll('.page-content');
             pages.forEach(p => {
@@ -454,54 +1071,86 @@
             });
 
             const targetPage = document.getElementById('page-' + targetPageId);
-            targetPage.classList.remove('hidden');
-            targetPage.classList.add('block');
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+                targetPage.classList.add('block');
+            }
         }
 
-        // Exportformal report 
+        // Export formal report 
         function exportFormalReport() {
             showToast('Preparing Executive Summary Report...');
-            
-            // Report Real-time
-            document.getElementById('rep-visitors').innerText = document.getElementById('visitorCount').innerText;
-            document.getElementById('rep-carbon').innerText = document.getElementById('carbonValue').innerText;
-            document.getElementById('rep-net').innerText = document.getElementById('netValue').innerText;
-            document.getElementById('rep-cost').innerText = document.getElementById('costValue').innerText;
 
-            const transportData = carbonChart.data.datasets[0].data;
-            document.getElementById('rep-mrt').innerText = transportData[0] + '%';
-            document.getElementById('rep-bus').innerText = transportData[1] + '%';
-            document.getElementById('rep-car').innerText = transportData[2] + '%';
+            const g = id => document.getElementById(id);
+            const txt = id => g(id)?.innerText ?? '–';
+            const fmt2 = v => parseFloat(v)?.toFixed(2) ?? '–';
 
-            // Add the real-time timestamp to the report
-            const now = new Date();
-            document.getElementById('rep-time').innerText = now.toLocaleString('en-GB');
+            // ── Visitor & Timestamp ─────────────────────────────────
+            g('rep-visitors').innerText = txt('visitorCount');
+            g('rep-time').innerText = new Date().toLocaleString('en-GB');
 
-            // 2. สลับซ่อนหน้าเว็บหลัก และเปิดหน้าเทมเพลตรายงาน
-            const mainUi = document.getElementById('main-ui');
-            const reportTemplate = document.getElementById('report-template');
-            
+            // ── Business KPIs ────────────────────────────────────
+            g('rep-net').innerText     = txt('netValue');
+            g('rep-cost').innerText    = txt('costValue');
+            g('rep-breakeven').innerText = txt('kpiBreakEven');
+            g('rep-progress').innerText  = txt('kpiProgress');
+            g('rep-profit').innerText    = txt('kpiProfit');
+            g('rep-status').innerText    = txt('kpiStatus');
+            g('rep-projected').innerText = txt('kpiProjected');
+
+            // ── Carbon / ESG ───────────────────────────────────
+            g('rep-carbon').innerText       = txt('resCarbonPerPax');
+            g('rep-total-carbon').innerText = txt('resTotalCarbon');
+            g('rep-scope1').innerText       = txt('resScope1');
+            g('rep-scope2').innerText       = txt('resScope2');
+            g('rep-scope3').innerText       = txt('resScope3');
+
+            // Scope 3 activity breakdown (from detail labels on carbon page)
+            g('rep-s3-visitors').innerText  = txt('detVisitors');
+            g('rep-s3-staff').innerText     = txt('detStaff');
+            g('rep-s3-materials').innerText = txt('detMaterials');
+            g('rep-s3-meals').innerText     = txt('detMeals');
+            g('rep-s3-waste').innerText     = txt('detWaste');
+            g('rep-s3-water').innerText     = txt('detWater');
+
+            // Certification status box
+            const carbonPerPax = parseFloat(txt('resCarbonPerPax')) || 0;
+            const visitors     = parseInt(txt('visitorCount').replace(/,/g, '')) || 0;
+            const certBox = g('rep-cert-box');
+            const certTxt = g('rep-cert');
+            if (visitors === 0) {
+                certBox.className = 'mt-4 p-3 border rounded text-sm font-medium bg-slate-50 border-slate-200 text-slate-600';
+                certTxt.innerText = 'Status: Awaiting visitor data from CCTV.';
+            } else if (carbonPerPax <= 0.40) {
+                certBox.className = 'mt-4 p-3 border rounded text-sm font-medium bg-emerald-50 border-emerald-200 text-emerald-800';
+                certTxt.innerText = `🟢 Green Certified — Eligible for The Mall Group Green Event Certification. Operating at ${carbonPerPax.toFixed(2)} kgCO2e/pax, below the 0.40 baseline.`;
+            } else {
+                certBox.className = 'mt-4 p-3 border rounded text-sm font-medium bg-amber-50 border-amber-200 text-amber-800';
+                certTxt.innerText = `⚠️ Review Needed — Current footprint is ${carbonPerPax.toFixed(2)} kgCO2e/pax, above the 0.40 baseline. Review Materials or Electricity usage.`;
+            }
+
+            // ── Render report & export PDF ──────────────────────────
+            const mainUi = g('main-ui');
+            const reportTemplate = g('report-template');
+
             mainUi.style.display = 'none';
             reportTemplate.style.display = 'block';
 
-            // 3. ตั้งค่า PDF ให้ออกมาเป็นขนาด A4 แนวตั้ง (Portrait) แบบโปร
             const opt = {
-                margin: 0, 
+                margin: [0.6, 0, 0.6, 0],
                 filename: 'CrowdX_Executive_Report.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2 },
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
 
-            // 4. สั่งประมวลผล PDF
             setTimeout(() => {
                 html2pdf().set(opt).from(reportTemplate).save().then(() => {
-                    // 5. เมื่อโหลดเสร็จแล้ว ให้สลับหน้าเว็บหลักกลับมาเหมือนเดิม
                     reportTemplate.style.display = 'none';
                     mainUi.style.display = 'block';
                     showToast('Executive Report downloaded successfully.');
                 });
-            }, 100); 
+            }, 100);
         }
 
         let toastTimeout;
@@ -737,10 +1386,10 @@
         const carbonChart = new Chart(document.getElementById('carbonChart'), {
             type: 'doughnut',
             data: {
-                labels: ['MRT/BTS', 'Bus', 'Personal Car'],
-                datasets: [{ data: [60, 25, 15], backgroundColor: ['#10b981', '#60a5fa', '#fbbf24'], borderWidth: 2, borderColor: '#ffffff', cutout: '75%' }]
+                labels: ['Scope 1', 'Scope 2', 'Scope 3'],
+                datasets: [{ data: [0, 0, 0], backgroundColor: ['#fbbf24', '#60a5fa', '#10b981'], borderWidth: 2, borderColor: '#ffffff', cutout: '75%' }]
             },
-            options: { responsive: true, plugins: { legend: { display: false } } }
+            options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(2)} kgCO2e` } } } }
         });
 
         async function refreshData() {
@@ -772,6 +1421,13 @@
                 carbonChart.data.datasets[0].data = [data.travelModes.mrt, data.travelModes.bus, data.travelModes.car];
                 carbonChart.update();
 
+                // Sync CCTV visitor count into carbon form and recalculate
+                const carbonPaxInp = document.getElementById('carbonPeopleCount');
+                if (carbonPaxInp) {
+                    carbonPaxInp.value = data.totalVisitors;
+                }
+                calculateCarbon();
+
             } catch (error) {
                 statusDot.className = 'w-2 h-2 bg-slate-400 rounded-full';
                 statusText.innerText = 'Offline: Check Sensor';
@@ -781,6 +1437,20 @@
 
         refreshData();
         setInterval(refreshData, 3000);
+
+        // Auto-recalculate Carbon whenever inputs change on the Carbon page
+        const carbonPage = document.getElementById('page-carbon');
+        if (carbonPage) {
+            carbonPage.addEventListener('input', calculateCarbon);
+            carbonPage.addEventListener('change', calculateCarbon);
+        }
+
+        // Restore active tab across reloads (defaults to 'overview')
+        const savedTab = location.hash.replace('#', '') || localStorage.getItem('activeTab') || 'overview';
+        if (savedTab) {
+            const targetBtn = document.querySelector(`button[onclick*="'${savedTab}'"]`);
+            if (targetBtn) switchTab(savedTab, targetBtn);
+        }
     </script>
 </body>
 </html>
