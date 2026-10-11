@@ -4,14 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CrowdX Dashboard - The Mall Theme</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- ไลบรารีเก็บไว้ในเครื่อง (frontend/vendor) เดโมได้แม้ไม่มีอินเทอร์เน็ต -->
+    <script src="vendor/tailwindcss-3.4.17.js"></script>
+    <script src="vendor/chart-4.5.1.umd.min.js"></script>
+    <script src="vendor/html2pdf-0.10.1.bundle.min.js"></script>
+    <script>
+        // กราฟใช้ฟอนต์และสีเดียวกับธีม
+        Chart.defaults.font.family = "'Inter', ui-sans-serif, system-ui, sans-serif";
+        Chart.defaults.color = '#64748b';
+        // ป้ายแกนเวลาไม่เอียง และเว้นระยะไม่ให้ซ้อนกัน
+        Chart.defaults.scale.ticks.maxRotation = 0;
+        Chart.defaults.scale.ticks.autoSkipPadding = 24;
+    </script>
+    <!-- ธีมร่วม (ฟอนต์ การ์ด แถบบน ปุ่ม) ใช้กับ index.html ด้วย -->
+    <link rel="stylesheet" href="theme.css">
+    <link rel="icon" type="image/png" href="assets/crowdx-favicon.png">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; overflow-x: hidden; }
-        .card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.5rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.05); border-color: #cbd5e1; }
-        
         #toast { transition: opacity 0.3s ease, transform 0.3s ease; }
         .fade-in { animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -42,17 +50,17 @@
                     <button onclick="closeModal()" class="text-slate-400 hover:text-blue-600 text-xl transition-colors">&times;</button>
                 </div>
                 <p class="text-xs text-slate-500 mb-4">Strictly for IT setup. Raw video is processed on the edge server and instantly anonymized.</p>
-                <!-- Cam 1: Expo Hall: ภาพสดจาก AI ถ้าออนไลน์ ไม่งั้นเล่นวิดีโอตัวอย่างแทน -->
+                <!-- กล้องของงานนี้: ภาพสดจาก AI ถ้าออนไลน์ ไม่งั้นเล่นวิดีโอตัวอย่างแทน (ชื่อกล้อง/วิดีโอโหลดจาก /api/event) -->
                 <div class="bg-slate-50 border border-slate-200 rounded-lg relative shadow-inner mb-4 overflow-hidden">
                     <div class="flex justify-between items-center px-3 py-2 border-b border-slate-200 bg-white">
-                        <span class="text-slate-600 text-sm font-medium">Cam 1: Expo Hall</span>
+                        <span class="text-slate-600 text-sm font-medium" id="camLabel">Cam 1: Expo Hall</span>
                         <span id="camStatus" class="text-slate-500 text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200">Status: Checking...</span>
                     </div>
                     <div class="h-[420px] bg-slate-900 flex items-center justify-center relative overflow-hidden">
                         <!-- ภาพสด (MJPEG) พร้อมกรอบตรวจจับจริงจาก count.py -->
                         <img id="camStream" alt="Live AI feed" class="w-full h-full object-contain hidden">
                         <!-- สำรอง: วิดีโอดิบ ไม่มีกรอบ AI (ไม่ใส่กรอบปลอม) -->
-                        <video id="camFallback" src="/samples/Sample01.mp4" class="w-full h-full object-contain opacity-80" loop muted playsinline></video>
+                        <video id="camFallback" class="w-full h-full object-contain opacity-80" loop muted playsinline></video>
                         <span id="camFallbackNote" class="absolute bottom-2 left-2 bg-slate-800/80 text-slate-200 text-[10px] px-2 py-1 rounded">AI offline: raw sample preview, no detection</span>
                     </div>
                 </div>
@@ -63,14 +71,13 @@
         </div>
 
         <!-- Navbar -->
-        <nav class="flex justify-between items-center mb-8">
+        <nav class="cx-topbar flex justify-between items-center">
             <!-- กดโลโก้กลับหน้า Hub (index.html) -->
             <div class="flex items-center space-x-4">
-                <a href="index.html" class="flex items-center space-x-3">
-                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center font-bold text-white shadow-sm">CX</div>
-                    <h1 class="text-xl font-bold text-slate-800">CrowdX <span class="text-xs text-slate-500 block font-normal">AI Smart Event & Carbon Tracker</span></h1>
+                <a href="index.html" class="cx-home flex items-center space-x-3" title="Back to all events">
+                    <img src="assets/crowdx-mark.png" alt="CrowdX logo" class="cx-logo">
+                    <h1 class="text-xl font-bold text-slate-800">Crowd<span class="cx-brand-x">X</span> <span class="text-xs text-slate-500 block font-normal">AI Smart Event & Carbon Tracker</span></h1>
                 </a>
-                <a href="index.html" class="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-600 hover:text-blue-700 hover:bg-blue-50 text-xs font-medium transition-colors shadow-sm">← All Events</a>
             </div>
             
             <!-- Navigation -->
@@ -96,23 +103,27 @@
         </nav>
 
         <!-- Header -->
-        <header class="mb-8">
-            <p class="text-xs font-bold text-blue-600 tracking-wider mb-2">EVENT INTELLIGENCE</p>
-            <h2 class="text-3xl font-bold mb-2 text-slate-900" id="page-title">MUICT x The Mall Green Expo 2026</h2>
-            <p class="text-slate-500 text-sm" id="page-subtitle">Dual-engine reporting: commercial performance and verified carbon impact, updated in real-time.</p>
-        </header>
+        <!-- Header: ชื่องานด้านซ้าย ยอดคนสดด้านขวา (Top KPI ย้ายมาอยู่ในหัวหน้า) -->
+        <header class="mb-8 flex flex-wrap items-center justify-between gap-6">
+            <div class="min-w-0">
+                <p class="text-xs font-bold text-blue-600 tracking-wider mb-2">EVENT INTELLIGENCE</p>
+                <h2 class="text-3xl font-bold mb-2 text-slate-900" id="page-title">MUICT x The Mall Green Expo 2026</h2>
+                <p class="text-slate-500 text-sm" id="page-subtitle">Dual-engine reporting: commercial performance and verified carbon impact, updated in real-time.</p>
+            </div>
 
-        <!-- Top KPI -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div class="card relative overflow-hidden">
-                <h3 class="text-xs text-slate-500 font-bold tracking-wider mb-2">TOTAL VERIFIED VISITORS</h3>
-                <div class="text-4xl font-bold mb-2 text-slate-800" id="visitorCount">0</div>
+            <!-- Top KPI -->
+            <div class="card relative overflow-hidden w-full sm:w-auto sm:min-w-[340px]">
+                <div class="flex justify-between items-center mb-2 gap-6">
+                    <h3 class="text-xs text-slate-500 font-bold tracking-wider">TOTAL VERIFIED VISITORS</h3>
+                    <span class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>LIVE</span>
+                </div>
+                <div class="text-4xl font-bold mb-2 text-slate-800 transition-colors" id="visitorCount">0</div>
                 <div class="flex items-center gap-2 text-xs">
                     <span class="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md border border-emerald-100 font-medium">Live CCTV count</span>
                     <span class="text-slate-400">zone + dwell, since server start</span>
                 </div>
             </div>
-        </div>
+        </header>
 
         <!-- ========================================== -->
         <!-- OVERVIEW -->
@@ -123,7 +134,7 @@
                 <div class="card flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-6">
-                            <h3 class="font-bold text-blue-700">Business Engine</h3>
+                            <h3 class="font-bold text-blue-700 flex items-center gap-2.5"><span class="cx-icon cx-icon-blue"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 15l4-4 3 3 6-6"/></svg></span>Business Engine</h3>
                             <span id="bizStatus" class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">Loading...</span>
                         </div>
                         <div class="grid grid-cols-2 gap-4 mb-6">
@@ -156,7 +167,7 @@
                 <div class="card flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-6">
-                            <h3 class="font-bold text-emerald-700">Carbon Engine</h3>
+                            <h3 class="font-bold text-emerald-700 flex items-center gap-2.5"><span class="cx-icon cx-icon-green"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 19c6 0 14-4 14-15C9 4 5 9 5 15v4zm0 0c2-4 5-7 9-9"/></svg></span>Carbon Engine</h3>
                             <span id="carbonStatusBadge" class="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md font-medium">ESG Data</span>
                         </div>
                         <div class="mb-4">
@@ -195,14 +206,17 @@
                 </div>
             </div>
 
-            <!-- Spillover -->
+            <!-- Spillover: ตัวเลขตัวอย่าง ยังไม่ได้วัดจริง (ต้องมีกล้องนับคนในโซนอื่นของห้าง) -->
             <div class="card">
                 <div class="flex justify-between items-center mb-4">
                     <div>
-                        <h3 class="font-bold mb-1 text-slate-800">Spillover Lift Analysis</h3>
-                        <p class="text-xs text-slate-500">Incremental traffic pushed from the expo hall into adjacent mall zones</p>
+                        <h3 class="font-bold mb-1 text-slate-800 flex items-center gap-2.5"><span class="cx-icon cx-icon-amber"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12h12m0 0l-4-4m4 4l-4 4M20 5v14"/></svg></span>Spillover Lift Analysis</h3>
+                        <p class="text-xs text-slate-500">Incremental traffic pushed from the event into adjacent mall zones. Example figures: not measured yet, needs people counting in each zone.</p>
                     </div>
-                    <span class="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-bold shadow-sm">Net mall lift +10.4%</span>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-xs bg-slate-100 text-slate-500 border border-slate-200 px-3 py-1 rounded-full font-medium">Illustrative</span>
+                        <span class="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-bold shadow-sm">Net mall lift +10.4%</span>
+                    </div>
                 </div>
                 <div class="grid grid-cols-5 gap-4 mt-6 text-center">
                     <div class="border-t-[3px] border-emerald-500 pt-3"><p class="text-xs text-slate-500 mb-1">Food Court</p><p class="text-2xl font-bold text-emerald-600">+21.7%</p></div>
@@ -219,7 +233,7 @@
         <!-- ========================================== -->
         <div id="page-business" class="page-content hidden fade-in">
             <div class="card mb-6">
-                <h3 class="font-bold text-blue-700 mb-4 text-xl">Detailed Commercial Performance</h3>
+                <h3 class="font-bold text-blue-700 mb-4 text-xl flex items-center gap-2.5"><span class="cx-icon cx-icon-blue"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 15l4-4 3 3 6-6"/></svg></span>Detailed Commercial Performance</h3>
                 <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg text-sm text-slate-700 mb-6 flex justify-between items-center gap-4">
                     <span><span class="text-blue-700 font-bold">Live Insight:</span> <span id="insightText">Loading...</span></span>
                     <span class="font-bold text-slate-900 text-right" id="insightTime"></span>
@@ -287,7 +301,7 @@
             <div class="card" id="eventSetup">
                 <div class="flex justify-between items-center mb-4">
                     <div>
-                        <h3 class="font-bold text-blue-700 text-xl">Event Setup</h3>
+                        <h3 class="font-bold text-blue-700 text-xl flex items-center gap-2.5"><span class="cx-icon cx-icon-violet"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h7"/></svg></span>Event Setup</h3>
                         <p class="text-xs text-slate-500">Costs and revenue from The Mall and the event organizer. Visitor count comes from CCTV.</p>
                     </div>
                     <button onclick="saveEvent()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">Save &amp; Recalculate</button>
@@ -326,7 +340,7 @@
         <!-- CARBON DETAILED -->
         <!-- ========================================== -->
         <div id="page-carbon" class="page-content hidden fade-in">
-            <h3 class="font-bold text-emerald-700 mb-4 text-xl">GHG Calculator</h3>
+            <h3 class="font-bold text-emerald-700 mb-4 text-xl flex items-center gap-2.5"><span class="cx-icon cx-icon-green"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 19c6 0 14-4 14-15C9 4 5 9 5 15v4zm0 0c2-4 5-7 9-9"/></svg></span>GHG Calculator</h3>
             <div class="grid grid-cols-2 gap-6 items-start">
                 <div>
                     <div class="card my-4">
@@ -565,8 +579,10 @@
                     <!-- Certification Card -->
                     <div class="card flex flex-col justify-center items-center text-center bg-gradient-to-b from-white to-emerald-50/50 border border-emerald-100">
                         <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg mb-2">🌿</div>
-                        <h4 class="text-lg font-bold text-emerald-800 mb-1">Green Event Standard</h4>
+                        <h4 class="text-lg font-bold text-emerald-800 mb-1">Green Event Standard (Proposed)</h4>
                         <p class="text-slate-500 text-xs px-2 leading-relaxed" id="certStatus">Calculated using Thailand Greenhouse Gas Management Organization (TGO) Emission Factors.</p>
+                        <!-- เกณฑ์ 0.40 เป็นร่างของ CrowdX ยังไม่ใช่มาตรฐานทางการ -->
+                        <p class="text-slate-400 text-[10px] px-2 mt-2">Threshold 0.40 kgCO2e/pax is a CrowdX draft, proposed for The Mall Group's Go to Zero program. Not an official certification yet.</p>
                     </div>
                 </div>
             </div>
@@ -588,11 +604,11 @@
         <div class="border-b-2 border-blue-800 pb-6 mb-8 flex justify-between items-end">
             <div>
                 <p class="text-sm font-bold text-slate-500 tracking-widest uppercase mb-1">Executive Summary Report</p>
-                <h1 class="text-3xl font-extrabold text-blue-900">MUICT x The Mall Green Expo 2026</h1>
+                <h1 class="text-3xl font-extrabold text-blue-900" id="rep-title">MUICT x The Mall Green Expo 2026</h1>
                 <p class="text-slate-600 mt-2">Post-Event Analytics and ESG Performance Document</p>
             </div>
             <div class="text-right">
-                <div class="w-12 h-12 bg-blue-800 rounded flex items-center justify-center font-bold text-white mb-2 ml-auto">CX</div>
+                <img src="assets/crowdx-mark.png" alt="CrowdX logo" class="w-12 h-12 object-contain mb-2 ml-auto">
                 <p class="text-xs text-slate-500 font-medium">Generated via CrowdX System</p>
                 <p class="text-xs text-slate-500" id="rep-time">DD/MM/YYYY HH:MM</p>
             </div>
@@ -654,7 +670,7 @@
         <div class="mb-8">
             <h2 class="text-lg font-bold text-blue-800 mb-3 border-l-4 border-emerald-500 pl-3">3. Environmental, Social, and Governance (ESG) Impact</h2>
             <p class="text-sm text-slate-700 leading-relaxed mb-4">
-                Carbon emission computations are aligned with the Thailand Greenhouse Gas Management Organization (TGO) standards. Transportation modes are classified via visual detection algorithms.
+                Carbon emissions are calculated with emission factors based on the Thailand Greenhouse Gas Management Organization (TGO). The visitor count comes from CCTV people counting (no faces stored). Visitor travel is estimated with an assumed 20 km round trip by car per visitor; cameras cannot see how visitors travelled, so actual travel modes will come from a visitor survey.
             </p>
             <div class="grid grid-cols-2 gap-6">
                 <div>
@@ -972,7 +988,7 @@
                 if (visitors === 0) {
                     certEl.innerText = 'Waiting for visitor data from CCTV camera to assess per-visitor performance.';
                 } else if (carbonPerPax <= 0.40) {
-                    certEl.innerText = `Eligible for The Mall Group Green Event Certification (Operating at ${carbonPerPax.toFixed(2)} kgCO2e/pax, well below baseline).`;
+                    certEl.innerText = `Meets the proposed Green Event threshold (operating at ${carbonPerPax.toFixed(2)} kgCO2e/pax, at or below the 0.40 draft threshold).`;
                 } else {
                     certEl.innerText = `Current footprint is ${carbonPerPax.toFixed(2)} kgCO2e/pax. Review reduction in Materials or Electricity to improve status.`;
                 }
@@ -997,7 +1013,7 @@
                     badge.innerText = 'Awaiting Data';
                 } else if (carbonPerPax <= 0.40) {
                     badge.className = 'text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded-md font-medium';
-                    badge.innerText = '🟢 Green Certified';
+                    badge.innerText = '🟢 Meets Draft Threshold';
                 } else {
                     badge.className = 'text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-md font-medium';
                     badge.innerText = '⚠️ Review Needed';
@@ -1015,10 +1031,10 @@
                     const pct = Math.abs(((carbonPerPax - baseline) / baseline) * 100).toFixed(1);
                     if (carbonPerPax <= baseline) {
                         paxBadge.className = 'text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full border border-emerald-200 font-medium';
-                        paxBadge.innerText = `${pct}% below baseline`;
+                        paxBadge.innerText = `${pct}% below 0.40 draft threshold`;
                     } else {
                         paxBadge.className = 'text-xs bg-red-50 text-red-700 px-2 py-1 rounded-full border border-red-200 font-medium';
-                        paxBadge.innerText = `${pct}% above baseline`;
+                        paxBadge.innerText = `${pct}% above 0.40 draft threshold`;
                     }
                 }
             }
@@ -1123,10 +1139,10 @@
                 certTxt.innerText = 'Status: Awaiting visitor data from CCTV.';
             } else if (carbonPerPax <= 0.40) {
                 certBox.className = 'mt-4 p-3 border rounded text-sm font-medium bg-emerald-50 border-emerald-200 text-emerald-800';
-                certTxt.innerText = `🟢 Green Certified — Eligible for The Mall Group Green Event Certification. Operating at ${carbonPerPax.toFixed(2)} kgCO2e/pax, below the 0.40 baseline.`;
+                certTxt.innerText = `🟢 Meets the proposed Green Event threshold. Operating at ${carbonPerPax.toFixed(2)} kgCO2e/pax, at or below the 0.40 kgCO2e/pax draft threshold (CrowdX proposal for The Mall Group Go to Zero; not an official certification yet).`;
             } else {
                 certBox.className = 'mt-4 p-3 border rounded text-sm font-medium bg-amber-50 border-amber-200 text-amber-800';
-                certTxt.innerText = `⚠️ Review Needed — Current footprint is ${carbonPerPax.toFixed(2)} kgCO2e/pax, above the 0.40 baseline. Review Materials or Electricity usage.`;
+                certTxt.innerText = `⚠️ Review Needed. Current footprint is ${carbonPerPax.toFixed(2)} kgCO2e/pax, above the 0.40 kgCO2e/pax draft threshold. Review Materials or Electricity usage.`;
             }
 
             // ── Render report & export PDF ──────────────────────────
@@ -1177,7 +1193,7 @@
         async function updateCamStatus() {
             let online = false;
             try {
-                online = (await (await fetch(API + '/api/camera')).json()).online;
+                online = (await (await fetch(API + '/api/camera' + EVENT_Q)).json()).online;
             } catch (e) { /* backend ปิดอยู่: ถือว่าออฟไลน์ */ }
             if (online === camLive) return;
             camLive = online;
@@ -1187,7 +1203,7 @@
             video.classList.toggle('hidden', online);
             document.getElementById('camFallbackNote').classList.toggle('hidden', online);
             if (online) {
-                img.src = API + '/api/stream?t=' + Date.now();
+                img.src = API + '/api/stream' + EVENT_Q + '&t=' + Date.now();
                 video.pause();
                 setCamStatus('Counting', 'text-emerald-600 bg-emerald-50 border-emerald-100');
             } else {
@@ -1224,6 +1240,9 @@
 
         // ===== Business Engine: ฟอร์ม Event Setup + แสดงผลจุดคุ้มทุน =====
         const API = 'http://localhost:3000';
+        // งานที่เปิดอยู่ มาจาก event.html?event=<id> (ไม่ระบุ = expo) ส่งต่อให้ทุก API
+        const EVENT_ID = new URLSearchParams(location.search).get('event') || 'expo';
+        const EVENT_Q = '?event=' + encodeURIComponent(EVENT_ID);
         let templates = null;
         let savedConfig = null; // ค่าที่บันทึกแล้วใน backend
         let draft = null;       // ค่าในฟอร์มที่กำลังแก้ (เก็บค่าทุกประเภทงานไว้ สลับประเภทแล้วไม่หาย)
@@ -1290,7 +1309,13 @@
         }
 
         async function loadEvent() {
-            const d = await (await fetch(API + '/api/event')).json();
+            const d = await (await fetch(API + '/api/event' + EVENT_Q)).json();
+            // ชื่องาน กล้อง และวิดีโอสำรองของงานนี้
+            document.title = d.info.name + ' - CrowdX';
+            document.getElementById('page-title').innerText = d.info.name;
+            document.getElementById('rep-title').innerText = d.info.name;
+            document.getElementById('camLabel').innerText = d.info.camera;
+            document.getElementById('camFallback').src = d.info.sample;
             templates = d.templates;
             savedConfig = d.config;
             draft = JSON.parse(JSON.stringify(d.config));
@@ -1302,7 +1327,7 @@
         async function saveEvent() {
             readForm();
             try {
-                const res = await fetch(API + '/api/event', {
+                const res = await fetch(API + '/api/event' + EVENT_Q, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(draft)
@@ -1399,7 +1424,7 @@
 
             try {
                 if (!templates) await loadEvent();
-                const response = await fetch(API + '/api/data');
+                const response = await fetch(API + '/api/data' + EVENT_Q);
                 const data = await response.json();
                 
                 statusDot.className = 'w-2 h-2 bg-emerald-500 rounded-full animate-pulse';

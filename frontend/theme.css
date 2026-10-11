@@ -1,0 +1,220 @@
+/* CrowdX theme: ใช้ร่วมกันทั้ง index.html (Hub) และ event.html (Dashboard)
+   โทนสว่าง ไม่เปลี่ยนข้อมูล/ไอดีใดๆ แค่ปรับหน้าตา (โหลดหลัง Tailwind) */
+
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 100 900;
+    src: url('vendor/inter-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+:root {
+    --cx-ink: #0f172a;
+    --cx-text: #334155;
+    --cx-muted: #64748b;
+    --cx-line: rgba(15, 23, 42, 0.08);
+    --cx-line-strong: rgba(15, 23, 42, 0.14);
+    --cx-brand: #2563eb;
+    --cx-brand-soft: rgba(37, 99, 235, 0.10);
+    --cx-green: #059669;
+    --cx-radius: 18px;
+    --cx-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px -6px rgba(15, 23, 42, 0.06);
+    --cx-shadow-hover: 0 1px 2px rgba(15, 23, 42, 0.05), 0 14px 32px -12px rgba(15, 23, 42, 0.14);
+}
+
+/* ===== พื้นหลังและตัวอักษร ===== */
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body {
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    color: var(--cx-text);
+    background-color: #f5f7fb;
+    background-image:
+        radial-gradient(1100px 520px at -5% -10%, rgba(37, 99, 235, 0.08), transparent 60%),
+        radial-gradient(900px 480px at 105% -5%, rgba(16, 185, 129, 0.07), transparent 60%);
+    background-attachment: fixed;
+    overflow-x: hidden;
+}
+::selection { background: rgba(37, 99, 235, 0.16); }
+h1, h2, h3, h4 { letter-spacing: -0.015em; }
+h2.text-3xl { letter-spacing: -0.025em; }
+
+/* ตัวเลขใหญ่: ความกว้างตัวเลขเท่ากัน ไม่กระตุกเวลาอัปเดตสด */
+.text-xl, .text-2xl, .text-3xl, .text-4xl,
+[id^="kpi"], #visitorCount, .card-visitors, .card-carbon {
+    font-variant-numeric: tabular-nums;
+}
+.text-2xl, .text-3xl, .text-4xl { letter-spacing: -0.025em; }
+
+/* ป้ายหัวข้อตัวเล็ก (เช่น NET VALUE, CARBON PER VISITOR) */
+p.text-xs.font-bold, h3.text-xs, p.text-\[10px\].font-bold, p.text-\[11px\].font-bold {
+    letter-spacing: 0.06em;
+}
+
+/* ===== การ์ด ===== */
+.card {
+    background-color: #ffffff;
+    border: 1px solid var(--cx-line);
+    border-radius: var(--cx-radius);
+    padding: 1.5rem;
+    box-shadow: var(--cx-shadow);
+    transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+.card:hover { box-shadow: var(--cx-shadow-hover); border-color: var(--cx-line-strong); }
+
+/* การ์ดงานในหน้า Hub: ยกขึ้นเล็กน้อยเมื่อชี้ + แถบสีด้านบนสำหรับงานที่ live */
+.event-card { overflow: hidden; }
+.event-card:hover { transform: translateY(-3px); }
+.event-card[data-category="live"]::before {
+    content: '';
+    position: absolute; left: 0; right: 0; top: 0; height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #6366f1 55%, #10b981);
+}
+.event-card[data-event="lego"]::before { background: linear-gradient(90deg, #f59e0b, #f43f5e 55%, #8b5cf6); }
+.event-card[data-category="live"] .grid.grid-cols-2 {
+    background: linear-gradient(180deg, #f8fafc, #f1f5f9);
+    border: 1px solid var(--cx-line);
+    border-radius: 14px;
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.5rem;
+}
+.event-card[data-category="live"] .border-t { border-top: 0; margin-top: 0.75rem; padding-top: 0.5rem; }
+.event-card[data-category="upcoming"] { background: rgba(255, 255, 255, 0.7); border-style: dashed; }
+
+/* ===== แถบบนสุด (sticky + เบลอพื้นหลัง) ===== */
+.cx-topbar {
+    position: sticky; top: 0; z-index: 40;
+    margin: -1.5rem -1.5rem 2rem;
+    padding: 0.875rem 1.5rem;
+    background: rgba(255, 255, 255, 0.72);
+    -webkit-backdrop-filter: saturate(1.6) blur(14px);
+    backdrop-filter: saturate(1.6) blur(14px);
+    border-bottom: 1px solid var(--cx-line);
+}
+/* โลโก้ CrowdX (assets/crowdx-mark.png ตัดมาจาก CrowdX_Geometric_Tech_Logo.png) */
+.cx-logo {
+    width: 2.5rem; height: 2.5rem; padding: 0.2rem;
+    border-radius: 12px; object-fit: contain;
+    background: #ffffff;
+    border: 1px solid var(--cx-line);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px -4px rgba(37, 99, 235, 0.25);
+}
+.cx-brand-x { color: #1d7cf2; }
+/* โลโก้เป็นปุ่มกลับหน้า Hub: ยกขึ้นเล็กน้อยเมื่อชี้ */
+.cx-home .cx-logo { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.cx-home:hover .cx-logo { transform: translateY(-1px) scale(1.04); box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08), 0 8px 18px -6px rgba(37, 99, 235, 0.35); }
+
+/* ===== แท็บแบบ segmented (Overview/Business/Carbon และตัวกรองงาน) ===== */
+#nav-menu, #filterBar {
+    background: rgba(241, 245, 249, 0.85);
+    border: 1px solid var(--cx-line);
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+#nav-menu .nav-btn, #filterBar .filter-btn { background: transparent; color: var(--cx-muted); font-weight: 500; }
+#nav-menu .nav-btn:hover, #filterBar .filter-btn:hover { color: var(--cx-ink); background: rgba(255, 255, 255, 0.6); }
+#nav-menu .nav-btn.bg-blue-50, #filterBar .filter-btn.bg-blue-50 {
+    background: #ffffff; color: var(--cx-brand); font-weight: 600;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 2px 8px -2px rgba(15, 23, 42, 0.08);
+}
+
+/* ===== ปุ่ม ===== */
+button, a { -webkit-tap-highlight-color: transparent; }
+button.bg-blue-600, a.bg-blue-600 {
+    background-image: linear-gradient(180deg, #3b82f6, #2563eb);
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.35), 0 4px 12px -4px rgba(37, 99, 235, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    transition: filter 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+}
+button.bg-blue-600:hover, a.bg-blue-600:hover { filter: brightness(1.06); }
+button.bg-blue-600:active, a.bg-blue-600:active { transform: translateY(1px); }
+button.bg-emerald-600 {
+    background-image: linear-gradient(180deg, #10b981, #059669);
+    box-shadow: 0 1px 2px rgba(5, 150, 105, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.cx-topbar button.rounded-full, .cx-topbar a.rounded-full { transition: all 0.2s ease; }
+
+/* ===== ช่องกรอกข้อมูล ===== */
+body .card input:not([type="checkbox"]):not([type="radio"]),
+body .card select {
+    border-color: var(--cx-line-strong);
+    border-radius: 10px;
+    background-color: #ffffff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+body .card input[readonly] { background-color: #f8fafc; color: var(--cx-muted); }
+body .card input:focus, body .card select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14);
+}
+body .card input:hover:not(:focus), body .card select:hover:not(:focus) { border-color: rgba(15, 23, 42, 0.24); }
+#searchInput { border-color: var(--cx-line-strong); background: rgba(255, 255, 255, 0.85); }
+#searchInput:focus { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14); }
+
+/* ปุ่ม "+ Add ..." ในฟอร์มคาร์บอน */
+#page-carbon button[id^="add-"] {
+    border: 1px dashed rgba(15, 23, 42, 0.22);
+    background: #fafbfc;
+    color: var(--cx-muted);
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+#page-carbon button[id^="add-"]:hover { border-color: #3b82f6; color: var(--cx-brand); background: var(--cx-brand-soft); }
+
+/* ===== ไอคอนในวงกลมสี (หัวการ์ด) ===== */
+.cx-icon {
+    width: 2rem; height: 2rem; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.cx-icon svg { width: 1.05rem; height: 1.05rem; }
+.cx-icon-blue { background: rgba(37, 99, 235, 0.10); color: #2563eb; }
+.cx-icon-green { background: rgba(16, 185, 129, 0.12); color: #059669; }
+.cx-icon-amber { background: rgba(245, 158, 11, 0.14); color: #d97706; }
+.cx-icon-violet { background: rgba(99, 102, 241, 0.12); color: #4f46e5; }
+
+/* ===== ตัวเลข KPI หน้า Business (กล่องย่อย) ===== */
+#page-business .grid-cols-3 > div {
+    background: #ffffff;
+    border-color: var(--cx-line);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+#page-business .grid-cols-3 > div:hover { border-color: var(--cx-line-strong); box-shadow: var(--cx-shadow); }
+#page-business .bg-blue-50 { background: linear-gradient(90deg, rgba(37, 99, 235, 0.08), rgba(99, 102, 241, 0.05)); border-color: rgba(37, 99, 235, 0.16); border-radius: 14px; }
+#eventSetup .grid-cols-2 > div { border-color: var(--cx-line); border-radius: 14px; background: #fcfdfe; }
+
+/* ===== ตาราง ===== */
+.card table { border-collapse: separate; border-spacing: 0; }
+.card table thead th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: #94a3b8; }
+.card table thead { background: #f8fafc; }
+.card table thead th:first-child { border-top-left-radius: 10px; }
+.card table thead th:last-child { border-top-right-radius: 10px; }
+.card table tbody tr { transition: background 0.15s ease; }
+.card table tbody tr:hover { background: #f8fafc; }
+.card table tfoot { background: rgba(37, 99, 235, 0.05); }
+
+/* ===== แถบความคืบหน้า ===== */
+.card-progress-bar, #progressBar { background-image: linear-gradient(90deg, #60a5fa, #2563eb); transition: width 0.6s cubic-bezier(.2, .8, .2, 1); }
+.event-card[data-event="lego"] .card-progress-bar { background-image: linear-gradient(90deg, #fbbf24, #f43f5e); }
+
+/* ===== หน้า Carbon ===== */
+#page-carbon .card p.text-lg.font-bold { letter-spacing: -0.015em; color: var(--cx-ink); }
+#page-carbon .card.border-2 { border-width: 1px; box-shadow: 0 1px 2px rgba(5, 150, 105, 0.06), 0 12px 32px -14px rgba(5, 150, 105, 0.28); }
+
+/* ===== หน้าต่างกล้อง และ Toast ===== */
+#statusModal > div { border-radius: 22px; border-color: var(--cx-line); box-shadow: 0 30px 80px -20px rgba(15, 23, 42, 0.35); }
+#statusModal .h-\[420px\] { border-radius: 0 0 12px 12px; }
+#toast { border-radius: 12px; border-color: var(--cx-line); box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.2); }
+
+/* ===== ข้อความสถานะ live ===== */
+#liveStatusBtn { backdrop-filter: blur(6px); }
+
+/* แถบเลื่อนบางๆ */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.28); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background-color: rgba(100, 116, 139, 0.45); }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+}

@@ -11,14 +11,6 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 // เสิร์ฟวิดีโอตัวอย่างให้หน้าต่าง System Status เล่นได้
 app.use('/samples', express.static(path.join(__dirname, 'vision', 'samples')));
 
-// ข้อมูลเริ่มต้น (ลบ Dwell Time และ Lead Rate ออกแล้ว)
-// ยอดคนเริ่มที่ 0 แล้วนับจากกล้องจริงเท่านั้น
-let eventData = {
-    totalVisitors: 0,
-    carbon: { perVisitor: 0.30, totalCarbon: 2535 },
-    travelModes: { mrt: 60, bus: 25, car: 15 }
-};
-
 // ===== Business Engine: จุดคุ้มทุน (ตาม Break-even_Framework_Mall_Events.pdf) =====
 // party: 'mall' = ทาง The Mall กรอก, ไม่ระบุ = ผู้จัดงานกรอก
 
@@ -92,26 +84,80 @@ const RATE_WINDOW_MS = 10 * 60 * 1000; // อัตราคนเข้าเ�
 const MIN_FORECAST_MS = 60 * 1000;     // 1 นาทีแรกของงานยังไม่พยากรณ์ (ข้อมูลน้อย ตัวเลขกระโดด)
 const SERVER_START = Date.now();
 
-// ค่าตั้งต้น = ตัวอย่างข้อ 7 ของ Framework (Brand activation) ต้องได้จุดคุ้มทุน 5,556 คน
-// Framework ให้แค่ยอดรวม FC และ VC จึงใส่ไว้ในช่อง "อื่นๆ"
-let eventConfig = {
-    type: 'brandActivation',
-    fixedCost: { venueRental: 0, electricity: 0, stage: 0, lightingSound: 0, decoration: 0, marketing: 0, staffing: 0, otherFixed: 250000 },
-    revenue: { organizerFee: 300000, boothFees: 0, incrementalMargin: 60000 },
-    variableCost: { otherVariable: 15 },
-    expectedVisitors: 6000,
-    startTime: SERVER_START,
-    endTime: SERVER_START + 2 * 60 * 60 * 1000,
-    surplusPct: 10
+// ===== รายการงาน: แต่ละงานมียอดคน ฟอร์ม Event Setup ประวัติ และกล้องของตัวเอง =====
+// เลือกงานด้วย ?event=<id> (ไม่ระบุ = expo) เช่น count.py --post-url http://localhost:3000/api/update?event=lego
+const DEFAULT_EVENT = 'expo';
+const CAMERA_TIMEOUT_MS = 5000; // กล้อง online ถ้าได้เฟรมภายใน 5 วินาที
+const EVENT_INFO = {
+    expo: {
+        name: 'MUICT x The Mall Green Expo 2026',
+        location: 'Bangkapi • MCC Hall',
+        camera: 'Cam 1: Expo Hall',
+        sample: '/samples/Sample01.mp4',
+        // ค่าตั้งต้น = ตัวอย่างข้อ 7 ของ Framework (Brand activation) ต้องได้จุดคุ้มทุน 5,556 คน
+        // Framework ให้แค่ยอดรวม FC และ VC จึงใส่ไว้ในช่อง "อื่นๆ"
+        config: {
+            type: 'brandActivation',
+            fixedCost: { otherFixed: 250000 },
+            revenue: { organizerFee: 300000, boothFees: 0, incrementalMargin: 60000 },
+            variableCost: { otherVariable: 15 },
+            expectedVisitors: 6000
+        }
+    },
+    lego: {
+        name: 'Family Fun Zone: LEGO Lunar Festival',
+        location: 'Bangkhae • Center Court',
+        camera: 'Cam 2: Center Court',
+        sample: '/samples/Sample02.mp4',
+        // ตัวเลขสมมติไว้เดโม (ยังไม่ใช่ข้อมูลจริง) แก้ได้ในฟอร์ม Event Setup → จุดคุ้มทุน 9,000 คน
+        config: {
+            type: 'family',
+            fixedCost: { otherFixed: 180000 },
+            revenue: { sponsorship: 150000, activityFees: 90000, fnb: 40000 },
+            variableCost: { toys: 10, giveaways: 5, safetyStaffing: 0, otherVariable: 0 },
+            expectedVisitors: 8000
+        }
+    }
 };
 
-// ประวัติยอดคนสะสม (เวลา, ยอดรวม) ใช้คิดอัตราคนเข้าและวาดกราฟ เก็บเฉพาะตัวเลขรวม
-let visitorHistory = [{ t: SERVER_START, n: 0 }];
+function createEvent(info) {
+    const fixedCost = Object.fromEntries(FIXED_COST_FIELDS.map(f => [f.key, info.config.fixedCost[f.key] || 0]));
+    return {
+        info,
+        // ยอดคนเริ่มที่ 0 แล้วนับจากกล้องจริงเท่านั้น (Carbon ยังเป็นค่าสุ่ม)
+        data: {
+            totalVisitors: 0,
+            carbon: { perVisitor: 0.30, totalCarbon: 2535 },
+            travelModes: { mrt: 60, bus: 25, car: 15 }
+        },
+        config: {
+            ...info.config, fixedCost,
+            startTime: SERVER_START,
+            endTime: SERVER_START + 2 * 60 * 60 * 1000,
+            surplusPct: 10
+        },
+        // ประวัติยอดคนสะสม (เวลา, ยอดรวม) ใช้คิดอัตราคนเข้าและวาดกราฟ เก็บเฉพาะตัวเลขรวม
+        history: [{ t: SERVER_START, n: 0 }],
+        // เฟรมล่าสุดจากกล้อง เก็บในหน่วยความจำเท่านั้น ไม่บันทึกลงดิสก์
+        frame: null,
+        frameAt: 0
+    };
+}
+
+const events = Object.fromEntries(Object.entries(EVENT_INFO).map(([id, info]) => [id, createEvent(info)]));
+
+// หางานจาก ?event= ถ้าไม่เจอตอบ 404
+function findEvent(req, res) {
+    const id = req.query.event || DEFAULT_EVENT;
+    const ev = events[id];
+    if (!ev) res.status(404).json({ success: false, error: `Unknown event: ${id}` });
+    return ev;
+}
 
 // ยอดคนสะสม ณ เวลา t (ใช้จุดล่าสุดที่ไม่เกิน t)
-function visitorsAt(t) {
+function visitorsAt(ev, t) {
     let n = 0;
-    for (const h of visitorHistory) {
+    for (const h of ev.history) {
         if (h.t > t) break;
         n = h.n;
     }
@@ -122,10 +168,10 @@ function sumFields(keys, values) {
     return keys.reduce((s, k) => s + (values[k] || 0), 0);
 }
 
-function computeBusiness(now = Date.now()) {
-    const c = eventConfig;
+function computeBusiness(ev, now = Date.now()) {
+    const c = ev.config;
     const type = EVENT_TYPES[c.type];
-    const n = eventData.totalVisitors;
+    const n = ev.data.totalVisitors;
 
     const fc = sumFields(FIXED_COST_FIELDS.map(f => f.key), c.fixedCost);
     const vc = sumFields(type.variable, c.variableCost);
@@ -138,7 +184,7 @@ function computeBusiness(now = Date.now()) {
 
     // อัตราคนเข้าเฉลี่ยช่วง 10 นาทีล่าสุด (ถ้างานเพิ่งเริ่ม ใช้เวลาที่ผ่านไปจริง)
     const windowStart = Math.max(now - RATE_WINDOW_MS, c.startTime);
-    const ratePerMs = now > windowStart ? (n - visitorsAt(windowStart)) / (now - windowStart) : 0;
+    const ratePerMs = now > windowStart ? (n - visitorsAt(ev, windowStart)) / (now - windowStart) : 0;
     const remainingMs = Math.max(0, c.endTime - now);
     // N_forecast_end = N_now + อัตรา × เวลาที่เหลือ (Framework ข้อ 5)
     const collecting = now - c.startTime < MIN_FORECAST_MS;
@@ -175,10 +221,11 @@ function computeBusiness(now = Date.now()) {
 }
 
 // ลดจำนวนจุดในกราฟให้เหลือไม่เกิน max จุด (เก็บจุดล่าสุดไว้เสมอ)
-function sampledHistory(max = 60) {
-    if (visitorHistory.length <= max) return visitorHistory;
-    const step = (visitorHistory.length - 1) / (max - 1);
-    return Array.from({ length: max }, (_, i) => visitorHistory[Math.round(i * step)]);
+function sampledHistory(ev, max = 60) {
+    const h = ev.history;
+    if (h.length <= max) return h;
+    const step = (h.length - 1) / (max - 1);
+    return Array.from({ length: max }, (_, i) => h[Math.round(i * step)]);
 }
 
 // ตรวจค่าเงิน: ต้องเป็นตัวเลข ≥ 0 ช่องที่ไม่ส่งมาถือเป็น 0
@@ -194,15 +241,18 @@ function pickAmounts(keys, src) {
 
 // รับข้อมูลจาก Python AI
 app.post('/api/update', (req, res) => {
+    const ev = findEvent(req, res);
+    if (!ev) return;
     const detectedPeople = req.body.count;
+    const eventData = ev.data;
 
     if (detectedPeople) {
         // 1. อัปเดตยอดคน
         eventData.totalVisitors += detectedPeople;
-        visitorHistory.push({ t: Date.now(), n: eventData.totalVisitors });
+        ev.history.push({ t: Date.now(), n: eventData.totalVisitors });
 
         // 2. คำนวณ Carbon ใหม่ให้แกว่งสมจริง
-        const randomFluctuation = (Math.random() * 0.02) - 0.01; 
+        const randomFluctuation = (Math.random() * 0.02) - 0.01;
         eventData.carbon.perVisitor = parseFloat((0.30 + randomFluctuation).toFixed(2));
 
         // 3. สุ่มปรับสัดส่วนการเดินทางให้กราฟวงกลมขยับ (รวมกันต้องได้ 100%)
@@ -210,28 +260,48 @@ app.post('/api/update', (req, res) => {
         eventData.travelModes.bus = 20 + Math.floor(Math.random() * 10);
         eventData.travelModes.car = 100 - eventData.travelModes.mrt - eventData.travelModes.bus;
 
-        console.log(`[AI] อัปเดตคน: ${eventData.totalVisitors} | Carbon/Pax: ${eventData.carbon.perVisitor}`);
+        console.log(`[AI] ${ev.info.name} อัปเดตคน: ${eventData.totalVisitors} | Carbon/Pax: ${eventData.carbon.perVisitor}`);
         res.json({ success: true });
     } else {
         res.status(400).json({ success: false });
     }
 });
 
+const cameraOnline = ev => Date.now() - ev.frameAt < CAMERA_TIMEOUT_MS;
+
+// รายการงานทั้งหมด สำหรับการ์ดในหน้า Hub
+app.get('/api/events', (req, res) => {
+    res.json(Object.entries(events).map(([id, ev]) => ({
+        id, ...ev.info, config: undefined,
+        totalVisitors: ev.data.totalVisitors,
+        carbon: ev.data.carbon,
+        business: computeBusiness(ev),
+        cameraOnline: cameraOnline(ev)
+    })));
+});
+
 // ส่งข้อมูลให้ Frontend
 app.get('/api/data', (req, res) => {
-    res.json({ ...eventData, business: computeBusiness(), history: sampledHistory() });
+    const ev = findEvent(req, res);
+    if (!ev) return;
+    res.json({ ...ev.data, business: computeBusiness(ev), history: sampledHistory(ev) });
 });
 
 // ข้อมูลตั้งค่างาน + แม่แบบฟอร์มตามประเภทงาน
 app.get('/api/event', (req, res) => {
+    const ev = findEvent(req, res);
+    if (!ev) return;
     res.json({
-        config: eventConfig,
+        info: { ...ev.info, config: undefined },
+        config: ev.config,
         templates: { fixedCost: FIXED_COST_FIELDS, revenue: REVENUE_FIELDS, variableCost: VARIABLE_COST_FIELDS, eventTypes: EVENT_TYPES }
     });
 });
 
 // บันทึกฟอร์ม Event Setup (เก็บในหน่วยความจำ รีสตาร์ทแล้วกลับเป็นค่าตั้งต้น)
 app.post('/api/event', (req, res) => {
+    const ev = findEvent(req, res);
+    if (!ev) return;
     const b = req.body || {};
     const type = EVENT_TYPES[b.type];
     if (!type) return res.status(400).json({ success: false, error: 'Unknown event type' });
@@ -252,35 +322,38 @@ app.post('/api/event', (req, res) => {
         return res.status(400).json({ success: false, error: 'Surplus threshold must be ≥ 0' });
     }
 
-    eventConfig = {
+    ev.config = {
         type: b.type, fixedCost, revenue, variableCost,
         expectedVisitors: b.expectedVisitors, startTime: b.startTime, endTime: b.endTime, surplusPct: b.surplusPct
     };
-    console.log(`[Event] ตั้งค่างานใหม่: ${type.label} | จุดคุ้มทุน ${computeBusiness().breakEven}`);
-    res.json({ success: true, config: eventConfig });
+    console.log(`[Event] ${ev.info.name} ตั้งค่างานใหม่: ${type.label} | จุดคุ้มทุน ${computeBusiness(ev).breakEven}`);
+    res.json({ success: true, config: ev.config });
 });
 
-// ===== Live Monitor (Cam 1: Expo Hall) =====
+// ===== Live Monitor: กล้องละงาน (?event=) =====
 // เก็บเฉพาะเฟรมล่าสุดในหน่วยความจำ ไม่บันทึกลงดิสก์
-let latestFrame = null;
-let latestFrameAt = 0;
-const CAMERA_TIMEOUT_MS = 5000;
 
 // รับภาพ JPEG จาก Python AI
 app.post('/api/frame', express.raw({ type: 'image/jpeg', limit: '5mb' }), (req, res) => {
+    const ev = findEvent(req, res);
+    if (!ev) return;
     if (!req.body || !req.body.length) return res.status(400).json({ success: false });
-    latestFrame = req.body;
-    latestFrameAt = Date.now();
+    ev.frame = req.body;
+    ev.frameAt = Date.now();
     res.json({ success: true });
 });
 
 // สถานะกล้อง: online ถ้าได้รับเฟรมภายใน 5 วินาที
 app.get('/api/camera', (req, res) => {
-    res.json({ online: Date.now() - latestFrameAt < CAMERA_TIMEOUT_MS, lastFrameAt: latestFrameAt || null });
+    const ev = findEvent(req, res);
+    if (!ev) return;
+    res.json({ online: cameraOnline(ev), lastFrameAt: ev.frameAt || null });
 });
 
 // สตรีม MJPEG ให้แท็ก <img> แสดงผลได้โดยตรง
 app.get('/api/stream', (req, res) => {
+    const ev = findEvent(req, res);
+    if (!ev) return;
     res.writeHead(200, {
         'Content-Type': 'multipart/x-mixed-replace; boundary=frame',
         'Cache-Control': 'no-cache, no-store',
@@ -288,10 +361,10 @@ app.get('/api/stream', (req, res) => {
     });
     let sentAt = 0;
     const timer = setInterval(() => {
-        if (!latestFrame || latestFrameAt === sentAt) return;
-        sentAt = latestFrameAt;
-        res.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${latestFrame.length}\r\n\r\n`);
-        res.write(latestFrame);
+        if (!ev.frame || ev.frameAt === sentAt) return;
+        sentAt = ev.frameAt;
+        res.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${ev.frame.length}\r\n\r\n`);
+        res.write(ev.frame);
         res.write('\r\n');
     }, 100);
     req.on('close', () => clearInterval(timer));

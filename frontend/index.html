@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CrowdX - Command Center</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- ไลบรารีเก็บไว้ในเครื่อง (frontend/vendor) เดโมได้แม้ไม่มีอินเทอร์เน็ต -->
+    <script src="vendor/tailwindcss-3.4.17.js"></script>
+    <!-- ธีมร่วม (ฟอนต์ การ์ด แถบบน ปุ่ม) ใช้กับ event.html ด้วย -->
+    <link rel="stylesheet" href="theme.css">
+    <link rel="icon" type="image/png" href="assets/crowdx-favicon.png">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; overflow-x: hidden; }
-        .card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.5rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.05); border-color: #cbd5e1; }
         .fade-in { animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -16,10 +17,10 @@
 <body class="p-6 min-h-screen fade-in relative">
 
     <!-- Navbar -->
-    <nav class="flex justify-between items-center mb-8">
+    <nav class="cx-topbar flex justify-between items-center">
         <div class="flex items-center space-x-3 cursor-pointer">
-            <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center font-bold text-white shadow-sm">CX</div>
-            <h1 class="text-xl font-bold text-slate-800">CrowdX <span class="text-xs text-slate-500 block font-normal">Command Center</span></h1>
+            <img src="assets/crowdx-mark.png" alt="CrowdX logo" class="cx-logo">
+            <h1 class="text-xl font-bold text-slate-800">Crowd<span class="cx-brand-x">X</span> <span class="text-xs text-slate-500 block font-normal">Command Center</span></h1>
         </div>
 
         <div class="flex items-center space-x-4">
@@ -50,25 +51,31 @@
         <div class="card relative overflow-hidden">
             <div class="flex justify-between items-center mb-2">
                 <h3 class="text-xs text-slate-500 font-bold tracking-wider">ACTIVE EVENTS</h3>
-                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="cx-icon cx-icon-green relative"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.55-2.28A1 1 0 0121 8.62v6.76a1 1 0 01-1.45.9L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg><span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse ring-2 ring-white"></span></span>
             </div>
-            <div class="text-4xl font-bold mb-2 text-slate-800">1</div>
+            <div class="text-4xl font-bold mb-2 text-slate-800" id="hubActiveEvents">2</div>
             <div class="flex items-center gap-2 text-xs">
                 <span class="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md border border-emerald-100 font-medium">Live now</span>
             </div>
         </div>
 
         <div class="card relative overflow-hidden">
-            <h3 class="text-xs text-slate-500 font-bold tracking-wider mb-2">TOTAL VISITORS (TODAY)</h3>
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-xs text-slate-500 font-bold tracking-wider">TOTAL VISITORS (TODAY)</h3>
+                <span class="cx-icon cx-icon-blue"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></span>
+            </div>
             <!-- ตั้งค่าเริ่มต้นเป็น 0 เพื่อรอข้อมูลจริงจาก Backend/Video -->
             <div class="text-4xl font-bold mb-2 text-blue-700" id="hubVisitorCount">0</div>
             <div class="flex items-center gap-2 text-xs">
-                <span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-md border border-blue-100 font-medium">Live from Cam 1</span>
+                <span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-md border border-blue-100 font-medium">All live events</span>
             </div>
         </div>
 
         <div class="card relative overflow-hidden">
-            <h3 class="text-xs text-slate-500 font-bold tracking-wider mb-2">AVG. CARBON PER PAX</h3>
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-xs text-slate-500 font-bold tracking-wider">AVG. CARBON PER PAX</h3>
+                <span class="cx-icon cx-icon-green"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 19c6 0 14-4 14-15C9 4 5 9 5 15v4zm0 0c2-4 5-7 9-9"/></svg></span>
+            </div>
             <div class="text-4xl font-bold mb-2 text-emerald-600" id="hubCarbonValue">0.30</div>
             <div class="flex items-center gap-2 text-xs">
                 <!-- Carbon Engine ยังไม่ได้ทำ ค่านี้เป็นค่าสุ่มจาก server.js -->
@@ -77,7 +84,10 @@
         </div>
 
         <div class="card relative overflow-hidden">
-            <h3 class="text-xs text-slate-500 font-bold tracking-wider mb-2">AVG. BREAK-EVEN PACE</h3>
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-xs text-slate-500 font-bold tracking-wider">AVG. BREAK-EVEN PACE</h3>
+                <span class="cx-icon cx-icon-violet"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg></span>
+            </div>
             <div class="text-4xl font-bold mb-2 text-slate-800" id="hubPace">0%</div>
             <div class="flex items-center gap-2 text-xs">
                 <span id="hubPaceBadge" class="bg-amber-50 text-amber-700 px-2 py-1 rounded-md border border-amber-200 font-medium">Connecting...</span>
@@ -86,7 +96,7 @@
     </div>
 
     <!-- Filter Buttons -->
-    <div class="flex space-x-2 text-sm font-medium text-slate-500 bg-white p-1 rounded-full border border-blue-100 shadow-sm mb-8 inline-flex">
+    <div id="filterBar" class="flex space-x-1 text-sm font-medium text-slate-500 bg-white p-1 rounded-full border border-blue-100 shadow-sm mb-8 inline-flex">
         <button onclick="filterEvents('all', this)" class="filter-btn bg-blue-50 text-blue-700 font-bold px-5 py-2 rounded-full transition-colors">All Events</button>
         <button onclick="filterEvents('live', this)" class="filter-btn hover:text-blue-700 hover:bg-blue-50 px-5 py-2 rounded-full transition-colors bg-white">Live</button>
         <button onclick="filterEvents('upcoming', this)" class="filter-btn hover:text-blue-700 hover:bg-blue-50 px-5 py-2 rounded-full transition-colors bg-white">Upcoming</button>
@@ -95,15 +105,15 @@
     <!-- Events Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="events-grid">
 
-        <!-- Card 1: LIVE (งานจริง ต่อกับกล้อง → event.html) -->
-        <div class="card event-card relative flex flex-col justify-between cursor-pointer search-target" data-category="live" onclick="window.location.href='event.html'">
+        <!-- Card 1: LIVE (งานจริง ต่อกับกล้อง → event.html) ตัวเลขอัปเดตจาก /api/events ตาม data-event -->
+        <div class="card event-card relative flex flex-col justify-between cursor-pointer search-target" data-category="live" data-event="expo" onclick="window.location.href='event.html'">
             <div>
                 <div class="flex justify-between items-center mb-4">
                     <button class="px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-xs flex items-center gap-1.5 font-bold shadow-sm">
                         <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
                         LIVE
                     </button>
-                    <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded border border-slate-200">CAM 1 ACTIVE</span>
+                    <span class="card-cam text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded border border-slate-200">CAM 1</span>
                 </div>
 
                 <h3 class="text-xl font-bold text-slate-900 mb-1 title-text">MUICT x The Mall Green Expo 2026</h3>
@@ -116,22 +126,63 @@
                     <div>
                         <p class="text-[10px] font-bold text-slate-400 mb-1">VISITORS</p>
                         <!-- ตั้งค่าเริ่มต้นเป็น 0 -->
-                        <p class="text-2xl font-bold text-slate-800" id="cardVisitorCount">0</p>
+                        <p class="card-visitors text-2xl font-bold text-slate-800">0</p>
                     </div>
                     <div>
                         <p class="text-[10px] font-bold text-slate-400 mb-1">CARBON / PAX</p>
-                        <p class="text-2xl font-bold text-emerald-600" id="cardCarbonPax">0.30</p>
+                        <p class="card-carbon text-2xl font-bold text-emerald-600">0.30</p>
                     </div>
                 </div>
             </div>
 
             <div class="mt-4 border-t border-slate-100 pt-4">
                 <div class="flex justify-between text-xs text-slate-500 mb-1">
-                    <span>Break-even progress</span><span id="cardProgressText" class="font-bold text-blue-600">0%</span>
+                    <span>Break-even progress</span><span class="card-progress-text font-bold text-blue-600">0%</span>
                 </div>
-                <div class="w-full h-2 bg-slate-100 rounded-full mb-5 overflow-hidden"><div id="cardProgressBar" class="h-2 bg-blue-500 rounded-full" style="width: 0%"></div></div>
+                <div class="w-full h-2 bg-slate-100 rounded-full mb-5 overflow-hidden"><div class="card-progress-bar h-2 bg-blue-500 rounded-full" style="width: 0%"></div></div>
 
                 <a href="event.html" class="block w-full text-center py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
+                    View Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Card 2: LIVE (LEGO Lunar Festival กล้อง Sample02 → event.html?event=lego) -->
+        <div class="card event-card relative flex flex-col justify-between cursor-pointer search-target" data-category="live" data-event="lego" onclick="window.location.href='event.html?event=lego'">
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <button class="px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-xs flex items-center gap-1.5 font-bold shadow-sm">
+                        <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                        LIVE
+                    </button>
+                    <span class="card-cam text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded border border-slate-200">CAM 2</span>
+                </div>
+
+                <h3 class="text-xl font-bold text-slate-900 mb-1 title-text">Family Fun Zone: LEGO Lunar Festival</h3>
+                <p class="text-xs text-slate-500 mb-6 flex items-center gap-1 location-text">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Bangkhae • Center Court
+                </p>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 mb-1">VISITORS</p>
+                        <p class="card-visitors text-2xl font-bold text-slate-800">0</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 mb-1">CARBON / PAX</p>
+                        <p class="card-carbon text-2xl font-bold text-emerald-600">0.30</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 border-t border-slate-100 pt-4">
+                <div class="flex justify-between text-xs text-slate-500 mb-1">
+                    <span>Break-even progress</span><span class="card-progress-text font-bold text-blue-600">0%</span>
+                </div>
+                <div class="w-full h-2 bg-slate-100 rounded-full mb-5 overflow-hidden"><div class="card-progress-bar h-2 bg-blue-500 rounded-full" style="width: 0%"></div></div>
+
+                <a href="event.html?event=lego" class="block w-full text-center py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
                     View Dashboard
                 </a>
             </div>
@@ -270,34 +321,42 @@
             const liveBtn = document.getElementById('liveStatusBtn');
 
             try {
-                const response = await fetch('http://localhost:3000/api/data');
-                const data = await response.json();
+                // ทุกงานที่ live พร้อมยอดคน คาร์บอน และจุดคุ้มทุนของแต่ละงาน
+                const events = await (await fetch('http://localhost:3000/api/events')).json();
 
                 statusDot.className = 'w-2 h-2 bg-emerald-500 rounded-full animate-pulse';
                 statusText.innerText = 'Live: Connected';
                 liveBtn.className = 'px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm flex items-center gap-2 transition-colors shadow-sm font-medium';
 
-                // อัปเดตตัวเลข Visitors ตามจริงจากวิดีโอ
-                const visitors = data.totalVisitors.toLocaleString();
-                document.getElementById('hubVisitorCount').innerText = visitors;
-                document.getElementById('cardVisitorCount').innerText = visitors;
+                // อัปเดตการ์ดแต่ละงานตาม data-event
+                events.forEach((ev, i) => {
+                    const card = document.querySelector(`.event-card[data-event="${ev.id}"]`);
+                    if (!card) return;
+                    const b = ev.business;
+                    card.querySelector('.card-visitors').innerText = ev.totalVisitors.toLocaleString();
+                    // Carbon per pax ยังเป็นค่าสุ่มจาก server.js
+                    card.querySelector('.card-carbon').innerText = ev.carbon.perVisitor.toFixed(2);
+                    // progressPct เป็น 0–100, null = ไม่มีจุดคุ้มทุน
+                    card.querySelector('.card-progress-text').innerText = b.progressPct === null ? '–' : b.progressPct.toFixed(1) + '%';
+                    card.querySelector('.card-progress-bar').style.width = Math.min(100, b.progressPct || 0) + '%';
+                    card.querySelector('.card-cam').innerText = `CAM ${i + 1} ` + (ev.cameraOnline ? 'ACTIVE' : 'OFFLINE');
+                });
 
-                // อัปเดต Carbon per pax (ยังเป็นค่าสุ่มจาก server.js)
-                if (data.carbon && data.carbon.perVisitor) {
-                    document.getElementById('hubCarbonValue').innerText = data.carbon.perVisitor.toFixed(2);
-                    document.getElementById('cardCarbonPax').innerText = data.carbon.perVisitor.toFixed(2);
-                }
+                // KPI รวมทุกงาน: ยอดคนรวม, ค่าเฉลี่ยคาร์บอนและความคืบหน้าจุดคุ้มทุน
+                const avg = arr => arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null;
+                document.getElementById('hubActiveEvents').innerText = events.length;
+                document.getElementById('hubVisitorCount').innerText = events.reduce((s, ev) => s + ev.totalVisitors, 0).toLocaleString();
+                document.getElementById('hubCarbonValue').innerText = avg(events.map(ev => ev.carbon.perVisitor)).toFixed(2);
+                const pace = avg(events.map(ev => ev.business.progressPct).filter(p => p !== null));
+                document.getElementById('hubPace').innerText = pace === null ? '–' : pace.toFixed(1) + '%';
 
-                // อัปเดตความคืบหน้าจุดคุ้มทุน (progressPct เป็น 0–100, null = ไม่มีจุดคุ้มทุน)
-                const b = data.business;
-                const pctText = b.progressPct === null ? '–' : b.progressPct.toFixed(1) + '%';
-                document.getElementById('hubPace').innerText = pctText;
-                document.getElementById('cardProgressText').innerText = pctText;
-                document.getElementById('cardProgressBar').style.width = Math.min(100, b.progressPct || 0) + '%';
-
+                // ป้ายสถานะ: แสดงงานที่แย่ที่สุด เพื่อให้เห็นงานที่ต้องดูแลก่อน
+                const WORST_FIRST = ['At Risk', 'No Break-even', 'Collecting data', 'On Track', 'Surplus'];
+                const worst = WORST_FIRST.find(s => events.some(ev => ev.business.status === s));
                 const paceBadge = document.getElementById('hubPaceBadge');
-                paceBadge.innerText = b.status;
-                paceBadge.className = 'px-2 py-1 rounded-md border font-medium ' + STATUS_STYLES[b.status];
+                const nWorst = events.filter(ev => ev.business.status === worst).length;
+                paceBadge.innerText = events.length > 1 ? `${worst} (${nWorst} of ${events.length})` : worst;
+                paceBadge.className = 'px-2 py-1 rounded-md border font-medium ' + STATUS_STYLES[worst];
 
             } catch (error) {
                 statusDot.className = 'w-2 h-2 bg-slate-400 rounded-full';
