@@ -306,20 +306,11 @@
                     </div>
                     <button onclick="saveEvent()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">Save &amp; Recalculate</button>
                 </div>
-                <label class="block text-xs font-bold text-slate-500 mb-6">EVENT TYPE
-                    <select id="eventType" onchange="onEventTypeChange()" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white"></select>
-                </label>
-                <div class="grid grid-cols-2 gap-6 mb-6">
-                    <div class="border border-slate-200 rounded-lg p-4">
-                        <h4 class="font-bold text-slate-800 mb-3">The Mall</h4>
-                        <div id="mallFields"></div>
-                    </div>
-                    <div class="border border-slate-200 rounded-lg p-4">
-                        <h4 class="font-bold text-slate-800 mb-3">Event Organizer</h4>
-                        <div id="organizerFields"></div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-4 gap-4">
+                <!-- ข้อมูลทั่วไปของงาน อยู่แถวเดียวกันด้านบน -->
+                <div class="grid grid-cols-5 gap-4 mb-6">
+                    <label class="block text-xs text-slate-500">Event type
+                        <select id="eventType" onchange="onEventTypeChange()" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white"></select>
+                    </label>
                     <label class="block text-xs text-slate-500">Expected visitors
                         <input id="expectedVisitors" type="number" min="1" step="1" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
                     </label>
@@ -332,6 +323,17 @@
                     <label class="block text-xs text-slate-500">Surplus threshold (% above break-even)
                         <input id="surplusPct" type="number" min="0" step="any" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
                     </label>
+                </div>
+                <!-- ฝั่ง The Mall มีช่องน้อยกว่า ให้กว้าง 1 ส่วน ฝั่งผู้จัดงานกว้าง 2 ส่วน -->
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <h4 class="font-bold text-slate-800 mb-3">The Mall</h4>
+                        <div id="mallFields"></div>
+                    </div>
+                    <div class="col-span-2 border border-slate-200 rounded-lg p-4">
+                        <h4 class="font-bold text-slate-800 mb-3">Event Organizer</h4>
+                        <div id="organizerFields"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1263,13 +1265,15 @@
             return d.toISOString().slice(0, 16);
         }
 
-        function fieldSection(title, fields, group, unit) {
+        // cols = จำนวนคอลัมน์ของช่องกรอกในหัวข้อนี้
+        function fieldSection(title, fields, group, unit, cols = 1) {
             if (!fields.length) return '';
-            return `<p class="text-xs font-bold text-slate-400 mt-2 mb-2">${title.toUpperCase()}</p>` + fields.map(f => `
+            const grid = { 1: 'grid-cols-1', 3: 'grid-cols-3' }[cols];
+            return `<p class="text-xs font-bold text-slate-400 mt-2 mb-2">${title.toUpperCase()}</p><div class="grid ${grid} gap-x-4">` + fields.map(f => `
                 <label class="block text-xs text-slate-500 mb-3">${f.label} <span class="text-slate-400">(${unit})</span>
                     <input type="number" min="0" step="any" data-group="${group}" data-key="${f.key}" value="${draft[group][f.key] ?? 0}"
                         class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
-                </label>`).join('');
+                </label>`).join('') + '</div>';
         }
 
         function renderSetupForm() {
@@ -1283,9 +1287,9 @@
                 fieldSection('Fixed costs', templates.fixedCost.filter(isMall), 'fixedCost', 'THB') +
                 fieldSection('Revenue', revenue.filter(isMall), 'revenue', 'THB');
             document.getElementById('organizerFields').innerHTML =
-                fieldSection('Fixed costs', templates.fixedCost.filter(f => !isMall(f)), 'fixedCost', 'THB') +
-                fieldSection('Revenue', revenue.filter(f => !isMall(f)), 'revenue', 'THB') +
-                fieldSection('Variable costs', variable, 'variableCost', 'THB per visitor');
+                fieldSection('Fixed costs', templates.fixedCost.filter(f => !isMall(f)), 'fixedCost', 'THB', 3) +
+                fieldSection('Revenue', revenue.filter(f => !isMall(f)), 'revenue', 'THB', 3) +
+                fieldSection('Variable costs', variable, 'variableCost', 'THB per visitor', 3);
             document.getElementById('expectedVisitors').value = draft.expectedVisitors;
             document.getElementById('startTime').value = toLocalInput(draft.startTime);
             document.getElementById('endTime').value = toLocalInput(draft.endTime);

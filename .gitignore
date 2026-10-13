@@ -3,3 +3,4 @@ backend/vision/output/
 *.pt
 __pycache__/
 CLAUDE.md
+/*.png
