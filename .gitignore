@@ -2,3 +2,4 @@ node_modules/
 backend/vision/output/
 *.pt
 __pycache__/
+CLAUDE.md
